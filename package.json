@@ -1,0 +1,21 @@
+{
+  "name": "govolley",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "packageManager": "bun@1.1.4",
+  "dependencies": {
+    "@govolley/shared-types": "workspace:*"
+  }
+}

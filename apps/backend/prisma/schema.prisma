@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String?
+  phone         String?
+  passwordHash  String?
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Training {
+  id              Int       @id @default(autoincrement())
+  title           String
+  description     String?
+  date            DateTime
+  maxParticipants Int       @default(10)
+  currentParticipants Int   @default(0)
+  price           Float?
+  coachName       String?
+  location        String?
+  isActive        Boolean   @default(true)
+  bookings        Booking[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Booking {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingId    Int
+  training      Training  @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  participants  Int       @default(1)
+  status        String    @default("PENDING")
+  paymentId     String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, trainingId])
+}
