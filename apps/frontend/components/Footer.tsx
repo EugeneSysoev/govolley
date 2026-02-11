@@ -9,7 +9,8 @@ export default function Footer() {
               Go<span className="text-phuket-yellow">Volley</span>
             </div>
             <p className="text-white/70 mb-6">
-              Пляжный волейбол на закате Карона. Профессиональные тренеры,
+              Пляжный волейбол на Пхукете. <br />
+              Профессиональные тренировки, <br />
               дружная атмосфера.
             </p>
             <div className="flex space-x-4">
@@ -81,17 +82,15 @@ export default function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <i className="fas fa-map-marker-alt text-phuket-yellow mt-1 mr-3"></i>
-                <span className="text-white/70">
-                  Пляж Карон, Пхукет, Таиланд
-                </span>
+                <span className="text-white/70">Пхукет, Таиланд</span>
               </li>
               <li className="flex items-start">
                 <i className="fab fa-whatsapp text-phuket-yellow mt-1 mr-3"></i>
-                <span className="text-white/70">+66 (XX) XXX-XXXX</span>
+                <span className="text-white/70">+7 (924) 537-91-55</span>
               </li>
               <li className="flex items-start">
                 <i className="far fa-envelope text-phuket-yellow mt-1 mr-3"></i>
-                <span className="text-white/70">info@govolley.ru</span>
+                <span className="text-white/70">sport-eugene@yandex.ru</span>
               </li>
             </ul>
           </div>
@@ -103,12 +102,12 @@ export default function Footer() {
             </h4>
             <div className="space-y-3">
               <div className="text-white/70">
-                <div className="font-medium">Ежедневно</div>
-                <div>17:00 - 20:30</div>
+                <div className="font-medium">Утренние тренировки</div>
+                <div>07:00 - 09:00</div>
               </div>
               <div className="text-white/70">
-                <div className="font-medium">Закатные тренировки</div>
-                <div>18:00 - 19:30</div>
+                <div className="font-medium">Вечерние тренировки</div>
+                <div>16:00 - 18:00</div>
               </div>
             </div>
           </div>
@@ -117,7 +116,7 @@ export default function Footer() {
         {/* Копирайт */}
         <div className="border-t border-white/10 mt-12 pt-8 text-center text-white/50 text-sm">
           <p>
-            © 2024 GoVolley.ru. Все права защищены. Тренировки по пляжному
+            © 2026 GoVolley.ru. Все права защищены. Тренировки по пляжному
             волейболу на Пхукете.
           </p>
         </div>

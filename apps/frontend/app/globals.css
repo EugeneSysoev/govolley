@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-brand-lime: #c2ff3f;
+  --color-brand-dark: #161618;
+  --color-brand-white: #ffffff;
+  --color-brand-silver: #c0c0c0;
+  --color-brand-grey: #6e6e6e;
+
+  /* Типографика */
+  --font-sans: var(--font-comfortaa);
+  --font-heading: var(--font-geologica);
+  --font-heading2: var(--font-montserrat);
+
+  --radius-xl: 1.5rem;
+  --radius-full: 999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    /* Твой выбранный темный цвет */
+    background-color: #161618;
+    color: #c2ff3f;
+    font-family: var(--font-sans);
+    font-weight: 900;
+    /* Плотность текста */
+    letter-spacing: -0.05em;
+    line-height: 1.1;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    min-height: 100vh;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Весь контент поднимаем над эффектами наложения */
+  main,
+  section,
+  div {
+    position: relative;
+    z-index: 10;
+  }
+
+  .heading-1 {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    word-spacing: 0.1em;
+    line-height: 1;
+    font-weight: 600;
+    transform: scaleY(1.2) skewX(-4deg);
+    transform-origin: bottom left;
+    display: inline-block;
+    transform-origin: bottom left;
+    -webkit-text-stroke: 1px currentColor;
+    font-stretch: 75%;
+  }
+
+  .upper-1 {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    line-height: 1;
+    font-weight: 900;
+    display: inline-block;
+    transform: scaleY(1.2);
+    transform-origin: bottom left;
+    -webkit-text-stroke: 1px currentColor;
+    font-stretch: 75%;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-8 py-3 rounded-full font-bold uppercase transition-all duration-300 active:scale-95;
+    background-color: var(--color-brand-lime);
+    color: var(--color-brand-dark);
+  }
+}
+
+.btn-nav {
+  @apply inline-flex items-center justify-center px-5 py-2 rounded-full 
+  font-black uppercase text-sm tracking-widest border-2 transition-all duration-300;
+
+  background-color: transparent;
+  border-color: var(--color-brand-lime);
+  color: var(--color-brand-lime);
+}
+
+.btn-nav:hover {
+  background-color: var(--color-brand-lime);
+  color: var(--color-brand-dark);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c2ff3f;
+  border-radius: 10px;
 }
