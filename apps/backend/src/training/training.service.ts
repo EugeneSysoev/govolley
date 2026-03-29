@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Prisma } from '@prisma/client';
+import { Prisma, SkillLevel } from '@prisma/client';
 import type { Training } from '@prisma/client';
 import type { CreateTrainingDto } from './dto/create-training.dto.js';
 import type { UpdateTrainingDto } from './dto/update-training.dto.js';
@@ -22,10 +22,13 @@ export class TrainingService {
       location: dto.location ?? null,
       currentParticipants: 0,
       isActive: true,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      targetLevel: dto.targetLevel as SkillLevel,
     };
 
     const result = await this.prisma.training.create({ data });
-    return result as unknown as Training;
+    return result;
   }
 
   async update(id: number, dto: UpdateTrainingDto): Promise<Training> {
@@ -40,6 +43,9 @@ export class TrainingService {
       maxParticipants: dto.maxParticipants,
       isActive: dto.isActive,
       date: dto.date ? new Date(dto.date) : undefined,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      targetLevel: dto.targetLevel as SkillLevel,
     };
 
     const result = await this.prisma.training.update({
@@ -47,29 +53,27 @@ export class TrainingService {
       data,
     });
 
-    return result as unknown as Training;
+    return result;
   }
 
   async findAll(): Promise<Training[]> {
-    const results = await this.prisma.training.findMany({
+    return this.prisma.training.findMany({
       where: { isActive: true },
       orderBy: { date: 'desc' },
     });
-    return results as unknown as Training[];
   }
 
   async findOne(id: number): Promise<Training> {
     const training = await this.prisma.training.findUnique({ where: { id } });
     if (!training) throw new NotFoundException(`Training ${id} not found`);
-    return training as unknown as Training;
+    return training;
   }
 
   async remove(id: number): Promise<Training> {
     await this.findOne(id);
-    const result = await this.prisma.training.update({
+    return this.prisma.training.update({
       where: { id },
       data: { isActive: false },
     });
-    return result as unknown as Training;
   }
 }

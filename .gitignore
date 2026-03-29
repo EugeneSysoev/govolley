@@ -1,34 +1,41 @@
-# dependencies (bun install)
-node_modules
+# Зависимости
+node_modules/
+.pnpm-store/
 
-# output
-out
-dist
+# Сборка и вывод
+dist/
+out/
+.next/
+build/
 *.tgz
+*.tsbuildinfo
 
-# code coverage
-coverage
-*.lcov
+# Turborepo (Критически важно!)
+.turbo/
 
-# logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+# Логи
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
 
-# dotenv environment variable files
+# Переменные окружения (Безопасность)
 .env
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
+.env.*.local
 
-# caches
-.eslintcache
-.cache
-*.tsbuildinfo
+# Prisma
+/apps/backend/prisma/migrations/migration_lock.toml
 
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
+# IDE и системные файлы
+.idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
+Thumbs.db

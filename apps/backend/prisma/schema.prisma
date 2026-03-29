@@ -6,45 +6,86 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  COACH
+  ADMIN
+}
+
+enum SkillLevel {
+  NOT_SET
+  BEGINNER     // Новичок
+  INTERMEDIATE // Средний
+  ADVANCED     // Продвинутый
+}
+
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  name          String?
-  phone         String?
-  passwordHash  String?
-  bookings      Booking[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              Int           @id @default(autoincrement())
+  telegramId      String?       @unique
+  username        String?       @unique // Тег в Telegram (@username)
+  firstName       String?       
+  lastName        String?
+  image           String?       // Оставляем пустым по дефолту
+  
+  role            Role          @default(USER)
+  skillLevel      SkillLevel    @default(NOT_SET)
+  isLevelVerified Boolean       @default(false)
+  balance         Int           @default(0)
+
+  // Связи
+  bookings        Booking[]
+  authSessions    AuthSession[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Training {
-  id              Int       @id @default(autoincrement())
-  title           String
-  description     String?
-  date            DateTime
-  maxParticipants Int       @default(10)
-  currentParticipants Int   @default(0)
-  price           Float?
-  coachName       String?
-  location        String?
-  isActive        Boolean   @default(true)
-  bookings        Booking[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                  Int           @id @default(autoincrement())
+  title               String
+  description         String?
+  date                DateTime
+  startTime           String
+  endTime             String
+  targetLevel         SkillLevel    @default(NOT_SET)
+  maxParticipants     Int           @default(10)
+  currentParticipants Int           @default(0)
+  price               Float?
+  location            String?
+  coachName           String?
+  isActive            Boolean       @default(true)
+
+  bookings            Booking[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 }
 
 model Booking {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trainingId    Int
-  training      Training  @relation(fields: [trainingId], references: [id], onDelete: Cascade)
-  participants  Int       @default(1)
-  status        String    @default("PENDING")
-  paymentId     String?
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingId  Int
+  training    Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  status      String   @default("CONFIRMED") // CONFIRMED, CANCELLED
+  paymentType String   @default("CASH")      // CASH, BALANCE
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([userId, trainingId])
+}
+
+model AuthSession {
+  id         String   @id @default(uuid())
+  // Согласовали тип с User.telegramId
+  telegramId String? 
+  status     String   @default("PENDING") // PENDING, CONFIRMED, EXPIRED
+  
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
 }

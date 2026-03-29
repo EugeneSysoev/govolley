@@ -12,7 +12,8 @@
     "clean": "turbo clean"
   },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "^2.8.21",
+    "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.1.4",
   "dependencies": {
