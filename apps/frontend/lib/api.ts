@@ -1,11 +1,10 @@
 import { Training, CreateTrainingDto } from "@govolley/shared-types";
 
-// Используем относительный путь, чтобы запросы шли через прокси Next.js
-const API_URL = "/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export async function getTrainings(): Promise<Training[]> {
   const res = await fetch(`${API_URL}/training`, {
-    cache: "no-store", // Важно для динамических данных
+    cache: "no-store",
   });
   if (!res.ok) {
     console.error(`API Error: ${res.status}`);

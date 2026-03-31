@@ -39,7 +39,7 @@ export default function Features() {
               <div className="relative overflow-visible">
                 <WordPullUp
                   words={FEATURES_CONFIG.title}
-                  className="heading-hero2 text-glow drop-shadow-lg/50 text-[clamp(5rem,13vw,9.5rem)] [&_span]:overflow-visible [&_span]:whitespace-nowrap text-brand-white block tracking-[-0.05em] leading-[0.85] lg:leading-[0.8] py-4 lg:py-10 px-0 lg:px-10 lg:-mx-10 overflow-visible"
+                  className="heading-hero2 drop-shadow-lg/50 text-[clamp(5rem,13vw,9.5rem)] [&_span]:overflow-visible [&_span]:whitespace-nowrap text-brand-white block tracking-[-0.05em] leading-[0.85] lg:leading-[0.8] py-4 lg:py-10 px-0 lg:px-10 lg:-mx-10 overflow-visible"
                 />
               </div>
             </div>

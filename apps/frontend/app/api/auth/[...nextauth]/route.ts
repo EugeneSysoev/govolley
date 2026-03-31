@@ -1,25 +1,29 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 export const runtime = "nodejs";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const INTERNAL_BACKEND_URL =
+  process.env.BACKEND_URL || "http://127.0.0.1:3000/api";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
   providers: [
     CredentialsProvider({
       id: "telegram-session",
-      name: "Telegram Session",
-      // ДОБАВЛЕНО: Описание полей для credentials (исправляет ошибку типа)
+      name: "Telegram",
       credentials: {
         sessionId: { label: "Session ID", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<User | null> {
         if (!credentials?.sessionId) return null;
+
         try {
           const res = await fetch(
-            `${BACKEND_URL}/auth/verify-confirmed-session`,
+            `${INTERNAL_BACKEND_URL}/bot-auth/verify-confirmed-session`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -27,13 +31,30 @@ export const authOptions: NextAuthOptions = {
             },
           );
 
-          if (!res.ok) return null;
+          if (!res.ok) {
+            const errorData = await res.text();
+            console.error(
+              "[NextAuth] Backend verification failed:",
+              res.status,
+              errorData,
+            );
+            return null;
+          }
+
           const user = await res.json();
 
-          // Если бэкенд вернул объект, NextAuth сохранит его в JWT
-          return user || null;
+          return {
+            id: String(user.id),
+            name: user.name,
+            username: user.username,
+            role: user.role,
+            image: user.image,
+            balance: user.balance,
+            skillLevel: user.skillLevel,
+            isLevelVerified: user.isLevelVerified ?? false,
+          } as User;
         } catch (e) {
-          console.error("Authorize fetch error:", e);
+          console.error("[NextAuth] Authorize network error:", e);
           return null;
         }
       },
@@ -41,22 +62,21 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // 1. При первичной авторизации
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
-        token.balance = (user as any).balance;
-        token.skillLevel = (user as any).skillLevel;
+        const u = user as any;
+        token.id = u.id;
+        token.role = u.role;
+        token.balance = u.balance;
+        token.skillLevel = u.skillLevel;
+        token.isLevelVerified = u.isLevelVerified;
 
         console.log(
-          "NextAuth [JWT]: Initialized with skillLevel:",
-          token.skillLevel,
+          `[NextAuth] JWT Created: ID ${u.id}, Skill: ${u.skillLevel}`,
         );
       }
 
-      // 2. При вызове update() на клиенте
       if (trigger === "update" && session?.user) {
-        console.log("NextAuth [JWT]: Manual update triggered", session.user);
+        console.log("[NextAuth] JWT Manual update triggered");
         return { ...token, ...session.user };
       }
 
@@ -66,17 +86,23 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         const sUser = session.user as any;
-        sUser.id = token.id;
-        sUser.role = token.role;
-        sUser.balance = token.balance;
-        sUser.skillLevel = token.skillLevel;
+        sUser.id = token.id as string;
+        sUser.role = token.role as string;
+        sUser.balance = token.balance as number;
+        sUser.skillLevel = token.skillLevel as string;
+        sUser.isLevelVerified = token.isLevelVerified as boolean;
       }
       return session;
     },
   },
-  pages: { signIn: "/auth/signin" },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/signin",
+  },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import IntroSequence from "./intro-sequence";
@@ -16,31 +16,52 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [introFinished, setIntroFinished] = useState(false);
+
+  // 1. Оптимизация: выносим список путей в мемо
+  const shouldSkipIntro = useMemo(
+    () => ["/auth/signin", "/auth/signup", "/onboarding"].includes(pathname),
+    [pathname],
+  );
+
+  /**
+   * 2. КРИТИЧЕСКИЙ ФИКС: Ленивая инициализация стейта.
+   * Если мы на странице онбординга, introFinished сразу будет true.
+   * Это убирает "черный экран" (opacity-0) при первой загрузке.
+   */
+  const [introFinished, setIntroFinished] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hasSeen = sessionStorage.getItem("hasSeenIntro") === "true";
+      // Если это не главная или мы уже видели интро, или путь в списке исключений
+      return (
+        ["/auth/signin", "/auth/signup", "/onboarding"].includes(pathname) ||
+        (pathname !== "/" && hasSeen)
+      );
+    }
+    return false;
+  });
+
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Теперь исключаем только страницу входа
-  const noIntroPages = ["/auth/signin"];
-  const shouldSkipIntro = noIntroPages.includes(pathname);
+  // Оптимизированный хэндлер скролла
+  const handleScroll = useCallback(() => {
+    const scrolled = window.scrollY > 50;
+    setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+  }, []);
 
   useEffect(() => {
-    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro");
-    const isHomePage = pathname === "/";
-
-    if (shouldSkipIntro || (!isHomePage && hasSeenIntro === "true")) {
+    // Синхронизируем стейт при смене роута
+    if (shouldSkipIntro) {
       setIntroFinished(true);
     }
 
     setIsCheckingSession(false);
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname, shouldSkipIntro]);
+  }, [pathname, shouldSkipIntro, handleScroll]);
 
+  // Управление скроллом всей страницы
   useEffect(() => {
     if (!introFinished && !shouldSkipIntro) {
       document.body.style.overflow = "hidden";
@@ -58,15 +79,19 @@ export default function ClientLayout({
 
   return (
     <NextAuthProvider>
-      {/* AuthGuard должен быть внутри NextAuthProvider, чтобы иметь доступ к сессии */}
       <AuthGuard>
-        <GlobalBackground />
+        {/* Фон теперь знает, когда проявляться */}
+        <GlobalBackground introFinished={introFinished} />
+
         <AnimatePresence mode="wait">
           {!introFinished && !shouldSkipIntro && (
             <IntroSequence key="intro-key" onComplete={handleIntroComplete} />
           )}
         </AnimatePresence>
 
+        {/* Этот div отвечает за видимость контента. 
+            Благодаря инициализации выше, на /onboarding он сразу получит opacity-100 
+        */}
         <div
           className={`relative min-h-dvh transition-opacity duration-1000 ${
             introFinished ? "opacity-100 visible" : "opacity-0 invisible"
@@ -75,7 +100,7 @@ export default function ClientLayout({
         >
           <Navbar introFinished={introFinished} isScrolled={isScrolled} />
 
-          <main>{children}</main>
+          <main className="relative grow">{children}</main>
 
           <Footer />
         </div>

@@ -77,7 +77,6 @@ model Booking {
 
 model AuthSession {
   id         String   @id @default(uuid())
-  // Согласовали тип с User.telegramId
   telegramId String? 
   status     String   @default("PENDING") // PENDING, CONFIRMED, EXPIRED
   

@@ -10,7 +10,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { randomUUID } from 'node:crypto';
 
-@Controller('auth')
+@Controller('bot-auth')
 export class AuthController {
   constructor(private readonly prisma: PrismaService) {}
 

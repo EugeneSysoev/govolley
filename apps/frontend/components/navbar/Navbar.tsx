@@ -3,8 +3,8 @@
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import NextImage from "next/image";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react"; // Импорт сессии
-import { useRouter } from "next/navigation"; // Импорт роутера
+import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation"; // Добавлен usePathname
 import RollingLink from "@/components/navbar/rolling-link";
 import WeatherWidget from "@/components/navbar/weather-widget";
 import { MagneticButton } from "@/components/magnetic-button";
@@ -16,9 +16,9 @@ interface NavbarProps {
 }
 
 const NAV_LINKS = [
+  { name: "Главная", href: "/#" },
   { name: "Тренировки", href: "/training" },
-  { name: "Локации", href: "/locations" },
-  { name: "Контакты", href: "#Контакты" },
+  { name: "Площадки", href: "/locations" },
 ];
 
 export default function Navbar({ introFinished }: NavbarProps) {
@@ -26,8 +26,9 @@ export default function Navbar({ introFinished }: NavbarProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [localIsAtTop, setLocalIsAtTop] = useState(true);
 
-  const { data: session, status } = useSession(); // Получаем статус авторизации
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname(); // Для определения активной страницы
 
   const { scrollY } = useScroll();
 
@@ -41,21 +42,35 @@ export default function Navbar({ introFinished }: NavbarProps) {
     setIsVisible(latest < previous || latest <= 10);
   });
 
-  // Логика клика по кнопке
+  // Логика блокировки: залогинен, но не прошел тест
+  const isLocked =
+    status === "authenticated" &&
+    (session?.user as any)?.skillLevel === "NOT_SET";
+
+  // Фильтруем ссылки для десктопа и мобилки
+  const filteredLinks = isLocked
+    ? NAV_LINKS.filter((link) => link.href === "/")
+    : NAV_LINKS;
+
   const handleAuthClick = () => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
-    } else if (session?.user?.skillLevel === "NOT_SET") {
-      router.push("/welcome-quiz");
+      return;
+    }
+
+    const user = session?.user as any;
+
+    if (!user?.skillLevel || user?.skillLevel === "NOT_SET") {
+      router.push("/onboarding"); // Исправлено на правильный путь
     } else {
-      router.push("/dashboard");
+      router.push("/profile"); // Исправлено на правильный путь
     }
   };
 
-  // Текст кнопки в зависимости от состояния
   const getButtonText = () => {
     if (status === "loading") return "Загрузка...";
     if (status === "authenticated") {
+      if (pathname === "/onboarding") return "Тестирование";
       return session.user?.name || "Профиль";
     }
     return "Войти в игру";
@@ -84,7 +99,8 @@ export default function Navbar({ introFinished }: NavbarProps) {
       >
         <div className="flex items-center gap-4 md:gap-10 shrink-0">
           <div className="lg:hidden flex items-center justify-center">
-            <MobileMenu links={NAV_LINKS} />
+            {/* Пробрасываем отфильтрованные ссылки в мобильное меню */}
+            <MobileMenu links={filteredLinks} />
           </div>
 
           <motion.div
@@ -109,7 +125,7 @@ export default function Navbar({ introFinished }: NavbarProps) {
 
         <div className="flex-1 flex items-center justify-end gap-8 md:gap-12">
           <motion.nav className="tracking-wider uppercase text-sm hidden lg:flex gap-8 md:gap-10 text-brand-white drop-shadow-xs/50">
-            {NAV_LINKS.map((item) => (
+            {filteredLinks.map((item) => (
               <MagneticButton key={item.name}>
                 <div className="px-2 py-1">
                   <RollingLink title={item.name} href={item.href} />

@@ -3,6 +3,7 @@ import {
   Patch,
   Body,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SkillLevel } from '@prisma/client';
@@ -11,39 +12,54 @@ import { SkillLevel } from '@prisma/client';
 export class UserController {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Сохранение результатов теста и присвоение уровня
-   */
   @Patch('complete-onboarding')
   async completeOnboarding(
-    @Body() body: { userId: number; totalScore: number },
+    @Body() body: { userId: unknown; totalScore: number },
   ) {
     console.log('RECEIVED PATCH REQUEST:', body);
+
+    const numericId = Number(body.userId);
+    const score = Number(body.totalScore);
+
+    if (isNaN(numericId)) {
+      throw new BadRequestException('Некорректный ID пользователя');
+    }
+
     try {
       let finalLevel: SkillLevel = SkillLevel.BEGINNER;
 
-      // Логика баллов согласно твоему плану:
-      // 5-9: BEGINNER, 10-15: INTERMEDIATE, 16-20: ADVANCED
-      if (body.totalScore >= 16) {
+      if (score >= 16) {
         finalLevel = SkillLevel.ADVANCED;
-      } else if (body.totalScore >= 10) {
+      } else if (score >= 10) {
         finalLevel = SkillLevel.INTERMEDIATE;
       }
 
       const updatedUser = await this.prisma.user.update({
-        where: { id: body.userId },
+        where: { id: numericId },
         data: {
           skillLevel: finalLevel,
-          isLevelVerified: false, // Всегда false до проверки тренером
+          isLevelVerified: false,
         },
       });
 
       return {
+        success: true,
         message: 'Onboarding completed',
         level: updatedUser.skillLevel,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Onboarding Error:', error);
+
+      // БЕЗОПАСНАЯ ПРОВЕРКА ОШИБКИ (Удовлетворяет ESLint)
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2025'
+      ) {
+        throw new BadRequestException('Пользователь не найден');
+      }
+
       throw new InternalServerErrorException(
         'Не удалось сохранить результаты теста',
       );

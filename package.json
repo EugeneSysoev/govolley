@@ -12,11 +12,12 @@
     "clean": "turbo clean"
   },
   "devDependencies": {
-    "turbo": "^2.8.21",
+    "turbo": "^2.9.1",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.1.4",
   "dependencies": {
-    "@govolley/shared-types": "workspace:*"
+    "@govolley/shared-types": "workspace:*",
+    "@nestjs/schedule": "^6.1.1"
   }
 }

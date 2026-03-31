@@ -13,7 +13,7 @@ export const ScrollIndicator = () => (
     }}
     className="flex flex-col items-center gap-3"
   >
-    <span className="text-white font-mono font-bold text-[clamp(9px,2vw,14px)] uppercase tracking-[0.3em] text-glow drop-shadow-md leading-relaxed md:leading-none [writing-mode:vertical-lr] rotate-180">
+    <span className="text-white font-mono font-bold text-[clamp(9px,2vw,14px)] uppercase tracking-[0.3em] drop-shadow-md leading-relaxed md:leading-none [writing-mode:vertical-lr] rotate-180">
       Прокрути
     </span>
 

@@ -90,25 +90,31 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
 
     try {
-      // КРИТИЧЕСКИЙ ФИКС: Используем только префикс /api.
-      // Это направит запрос через Next.js Rewrites на порт 3000.
       const API_ENDPOINT = "/api/users/complete-onboarding";
-
       console.log("Submitting Onboarding:", { userId, totalScore: finalScore });
 
       const res = await fetch(API_ENDPOINT, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          // Заголовок для обхода окна-предупреждения ngrok
           "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({ userId, totalScore: finalScore }),
       });
 
       if (res.ok) {
-        // 1. Обновляем сессию (skillLevel теперь в БД)
-        await update({ skillLevel: "STATED_IN_DB" });
+        const data = await res.json();
+
+        // 1. Обновляем локальную сессию NextAuth.
+        // Передаем новый уровень, чтобы AuthGuard пропустил нас дальше.
+        await update({
+          user: {
+            ...session?.user,
+            skillLevel: data.level,
+          },
+        });
+
+        console.log("Session updated locally. Redirecting...");
 
         // 2. Жесткий редирект для сброса кэша всех гардов
         window.location.href = "/profile";
@@ -128,7 +134,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-zinc-950">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-transparent">
       <div className="max-w-md w-full bg-zinc-900 rounded-3xl border border-white/5 shadow-2xl p-8">
         {/* Прогресс-бар */}
         <div className="mb-8">

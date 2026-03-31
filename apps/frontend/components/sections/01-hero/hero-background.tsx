@@ -1,21 +1,29 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, MotionValue } from "framer-motion";
+import { useRef, useEffect } from "react";
+import { motion, MotionValue, useInView } from "framer-motion";
 
 interface HeroBackgroundProps {
   y: MotionValue<string>;
 }
 
-const VIDEOS = ["/photos/v1.mp4", "/photos/v2.mp4", "/photos/v3.mp4"];
+const VIDEO_SRC = "/videos/hero-optimized.webm";
 
 export const HeroBackground = ({ y }: HeroBackgroundProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isInView = useInView(videoRef, { amount: 0.1, once: false });
 
-  const handleVideoEnd = () => {
-    setCurrentIndex((prev) => (prev + 1) % VIDEOS.length);
-  };
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isInView) {
+        videoRef.current.play().catch((err) => {
+          console.warn("Autoplay was prevented:", err);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isInView]);
 
   return (
     <motion.div
@@ -24,14 +32,12 @@ export const HeroBackground = ({ y }: HeroBackgroundProps) => {
     >
       <video
         ref={videoRef}
-        src={VIDEOS[currentIndex]}
-        autoPlay
+        src={VIDEO_SRC}
         muted
-        loop={false}
+        loop
         playsInline
-        preload="auto"
-        onEnded={handleVideoEnd}
-        className="absolute inset-0 w-full h-full object-cover opacity-60 contrast-[1.1] brightness-[1.1]"
+        preload="none"
+        className="absolute inset-0 w-full h-full object-cover opacity-60"
         style={{ backfaceVisibility: "hidden" }}
       />
     </motion.div>
