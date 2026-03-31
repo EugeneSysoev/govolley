@@ -4,100 +4,77 @@ import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 
 export default function TelegramLogin() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [botUrl, setBotUrl] = useState<string | null>(null);
 
+  // Следим за статусом, если сессия инициализирована
   useEffect(() => {
     if (!sessionId) return;
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/bot-auth/session-status/${sessionId}`, {
-          headers: { "ngrok-skip-browser-warning": "true" },
-        });
-
-        if (!res.ok) return;
-
+        const res = await fetch(`/api/bot-auth/session-status/${sessionId}`);
         const data = await res.json();
 
         if (data.status?.toUpperCase() === "CONFIRMED") {
           clearInterval(interval);
-
-          const result = await signIn("telegram-session", {
+          await signIn("telegram-session", {
             sessionId,
             callbackUrl: "/profile",
-            redirect: true,
           });
-
-          if (result?.error) {
-            console.error("[Auth] SignIn failed:", result.error);
-          }
         }
-      } catch (error) {
-        console.error("[Auth] Polling error:", error);
+      } catch (e) {
+        console.error(e);
       }
     }, 2500);
 
     return () => clearInterval(interval);
   }, [sessionId]);
 
-  const startLogin = async () => {
-    setIsSubmitting(true);
+  const handleLogin = async () => {
+    setIsWaiting(true);
     try {
-      const res = await fetch("/api/bot-auth/init-session", {
-        method: "POST",
-        headers: { "ngrok-skip-browser-warning": "true" },
-      });
-
-      if (!res.ok) throw new Error("Failed to init session");
-
+      const res = await fetch("/api/bot-auth/init-session", { method: "POST" });
       const data = await res.json();
-      if (data.sessionId) {
+
+      if (data.sessionId && data.botUrl) {
         setSessionId(data.sessionId);
-        setBotUrl(data.botUrl);
+        // АВТО-ОТКРЫТИЕ: открываем бота в новом окне сразу
+        window.open(data.botUrl, "_blank");
       }
-    } catch (error) {
-      console.error("[Auth] Init error:", error);
-      alert("Ошибка связи с сервером.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (e) {
+      alert("Ошибка");
+      setIsWaiting(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {!botUrl ? (
+    <div className="w-full">
+      <button
+        onClick={handleLogin}
+        disabled={isWaiting}
+        className="w-full h-14 bg-brand-lime text-black rounded-2xl font-black uppercase text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
+      >
+        {isWaiting ? (
+          <span className="flex items-center justify-center gap-2">
+            {/* Можно добавить мелкий спиннер */}
+            Ждем подтверждения в боте
+          </span>
+        ) : (
+          "Войти через Telegram"
+        )}
+      </button>
+
+      {isWaiting && (
         <button
-          onClick={startLogin}
-          disabled={isSubmitting}
-          className="px-6 py-3 bg-brand-lime text-black rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all"
+          onClick={() => {
+            setSessionId(null);
+            setIsWaiting(false);
+          }}
+          className="w-full text-center text-[10px] text-white/20 mt-4 uppercase tracking-widest hover:text-white/50"
         >
-          {isSubmitting ? "Подготовка..." : "Войти через Telegram"}
+          Отмена
         </button>
-      ) : (
-        <div className="text-center">
-          <p className="mb-4 text-white/80 text-sm italic">
-            Подтвердите вход в открывшемся боте
-          </p>
-          <a
-            href={botUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block px-8 py-4 bg-[#24A1DE] text-white rounded-2xl font-bold animate-pulse shadow-lg shadow-[#24A1DE]/20"
-          >
-            Открыть Telegram
-          </a>
-          <button
-            onClick={() => {
-              setBotUrl(null);
-              setSessionId(null);
-            }}
-            className="block mt-6 text-[10px] text-white/30 hover:text-white/60 underline mx-auto"
-          >
-            Отмена
-          </button>
-        </div>
       )}
     </div>
   );

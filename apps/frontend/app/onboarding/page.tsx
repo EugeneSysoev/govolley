@@ -135,12 +135,12 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-transparent">
-      <div className="max-w-md w-full bg-zinc-900 rounded-3xl border border-white/5 shadow-2xl p-8">
+      <div className="max-w-md w-full bg-white/5 backdrop-blur-md rounded-3xl border border-white/5 shadow-2xl p-8">
         {/* Прогресс-бар */}
         <div className="mb-8">
           <div className="flex justify-between items-end mb-2">
             <span className="text-brand-lime font-bold text-sm tracking-widest uppercase">
-              Onboarding
+              Определяем твой уровень
             </span>
             <span className="text-zinc-500 text-xs">
               {currentStep + 1} / {QUESTIONS.length}
