@@ -2,47 +2,48 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { data: session, status, update } = useSession();
+const AuthGuard = memo(({ children }: { children: React.ReactNode }) => {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const isNotSet = useMemo(() => {
+    const user = session?.user as any;
+    return !user?.skillLevel || user.skillLevel === "NOT_SET";
+  }, [session?.user]);
 
   useEffect(() => {
-    // Если сессия еще грузится — ничего не делаем
-    if (status === "loading") return;
+    if (status === "loading" || isRedirecting) return;
 
     if (status === "authenticated" && session?.user) {
-      const user = session.user as any;
-
-      // Лог для отладки — проверьте его сразу после теста!
-      console.log("GUARD CHECK:", user.skillLevel, "Path:", pathname);
-
-      const isNotSet = !user.skillLevel || user.skillLevel === "NOT_SET";
-
-      // Если уровень не установлен и мы не на онбординге — редирект
       if (isNotSet && pathname !== "/onboarding") {
+        setIsRedirecting(true);
         router.replace("/onboarding");
-        return;
-      }
-
-      // Если уровень УСТАНОВЛЕН и мы на онбординге — уходим в профиль
-      if (!isNotSet && pathname === "/onboarding") {
+      } else if (!isNotSet && pathname === "/onboarding") {
+        setIsRedirecting(true);
         router.replace("/profile");
       }
     }
-  }, [session, status, pathname, router]);
+  }, [session, status, pathname, router, isRedirecting, isNotSet]);
 
-  // Если мы в процессе редиректа на онбординг, не рендерим контент
-  const user = session?.user as any;
-  if (
-    status === "authenticated" &&
-    (!user?.skillLevel || user?.skillLevel === "NOT_SET") &&
-    pathname !== "/onboarding"
-  ) {
-    return <div className="min-h-screen bg-orange-50" />;
+  useEffect(() => {
+    setIsRedirecting(false);
+  }, [pathname]);
+
+  if (status === "loading" || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-lime/30 border-t-brand-lime rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return <>{children}</>;
-}
+});
+
+AuthGuard.displayName = "AuthGuard";
+
+export default AuthGuard;

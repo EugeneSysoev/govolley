@@ -66,12 +66,15 @@ export default function IntroSequence({ onComplete }: IntroProps) {
     return () => timers.forEach(clearTimeout);
   }, [onComplete, morphProgress]);
 
-  const pulseGlow = [
-    "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
-    "drop-shadow(0 0 15px rgba(201, 237, 74, 1))",
-    "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
-    "drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5))",
-  ];
+  const pulseKeyframes = {
+    filter: [
+      "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
+      "drop-shadow(0 0 15px rgba(201, 237, 74, 1))",
+      "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
+      "drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5))",
+    ],
+    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+  };
 
   const pulseTransition: Transition = {
     duration: 2,
@@ -154,8 +157,11 @@ export default function IntroSequence({ onComplete }: IntroProps) {
                       opacity: step >= 1 ? 1 : 0,
                       scale: step >= 6 ? 5 : 1,
                       x: step === 7 ? [0, -4, 4, -4, 4, 0] : 0,
-                      // УБИРАЕМ filter на шагах 6 и 7 (когда сердце большое)
-                      filter: step >= 1 && step < 6 ? pulseGlow : "none",
+                      // Статичное свечение без анимации
+                      filter:
+                        step >= 1 && step < 6
+                          ? "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))"
+                          : "none",
                     }
                   : {
                       scale: 100,
@@ -167,17 +173,14 @@ export default function IntroSequence({ onComplete }: IntroProps) {
                 opacity: { duration: 0.4 },
                 scale: { duration: step === 6 ? 1 : 0.4, ease: "easeInOut" },
                 x: { duration: 0.1, repeat: step === 7 ? Infinity : 0 },
-                filter: pulseTransition,
+                filter: { duration: 0.3 },
               }}
               style={{
                 transformBox: "fill-box",
                 transformOrigin: "center",
-                // ЭТОТ ПАРАМЕТР КРИТИЧЕН ДЛЯ ЧЕТКОСТИ:
                 willChange: "transform",
-                // Хак для некоторых браузеров, чтобы они не кэшировали растр:
                 backfaceVisibility: "hidden",
               }}
-              // GeometricPrecision заставляет браузер считать координаты векторов, а не пиксели
               shapeRendering="geometricPrecision"
             />
           </g>

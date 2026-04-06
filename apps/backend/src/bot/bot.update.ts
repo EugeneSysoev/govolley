@@ -1,9 +1,7 @@
 import { Update, Start, Ctx } from 'nestjs-telegraf';
-import { Context, Markup, TelegramError } from 'telegraf'; // Добавили TelegramError
+import { Context, TelegramError } from 'telegraf';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Logger } from '@nestjs/common';
-
-// Удалили InlineKeyboardButton, так как используем Markup.button.url()
 
 interface StartContext extends Context {
   startPayload?: string;
@@ -15,25 +13,19 @@ export class BotUpdate {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Безопасная отправка сообщения с обработкой ошибок Telegram
-   */
-  private async safeReply(
-    ctx: Context,
-    text: string,
-    extra?: object, // Заменили any на object для соответствия типам Telegraf
-  ) {
+  // Безопасная отправка сообщения с обработкой ошибок
+  private async safeReply(ctx: Context, text: string, extra?: object) {
     try {
       return await ctx.reply(text, extra);
     } catch (error: unknown) {
-      // Проверяем, является ли ошибка ошибкой Telegram
       if (error instanceof TelegramError && error.code === 403) {
-        this.logger.warn(`User ${ctx.from?.id} blocked the bot.`);
+        this.logger.warn(`Пользователь ${ctx.from?.id} заблокировал бота`);
         return null;
       }
 
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to send message: ${message}`);
+      const message =
+        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      this.logger.error(`Ошибка отправки: ${message}`);
       throw error;
     }
   }
@@ -63,6 +55,7 @@ export class BotUpdate {
         return;
       }
 
+      // Создаем или обновляем пользователя и подтверждаем сессию
       await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.upsert({
           where: { telegramId: tgUser.id.toString() },
@@ -91,27 +84,13 @@ export class BotUpdate {
         });
       });
 
-      await this.safeReply(
-        ctx,
-        '✅ Вход подтвержден!',
-        Markup.inlineKeyboard([
-          [
-            Markup.button.url(
-              '🔙 Вернуться на сайт',
-              'https://spathose-julie-unbreakable.ngrok-free.dev/profile',
-            ),
-          ],
-        ]),
-      );
+      await this.safeReply(ctx, '✅ Вход подтвержден! Вернитесь на сайт.');
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Auth Process Error: ${message}`);
+      const message =
+        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      this.logger.error(`Ошибка авторизации: ${message}`);
 
-      // Пытаемся ответить пользователю, если это не ошибка блокировки
-      await this.safeReply(
-        ctx,
-        '⚠️ Ошибка при обработке входа. Попробуйте еще раз с сайта.',
-      );
+      await this.safeReply(ctx, '⚠️ Ошибка входа. Попробуйте еще раз.');
     }
   }
 }

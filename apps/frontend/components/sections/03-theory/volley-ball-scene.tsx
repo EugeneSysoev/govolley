@@ -15,8 +15,6 @@ interface VolleyballSceneProps {
 }
 
 export default function VolleyballScene({ inView }: VolleyballSceneProps) {
-  if (!inView) return null;
-
   return (
     <Suspense
       fallback={
@@ -25,7 +23,12 @@ export default function VolleyballScene({ inView }: VolleyballSceneProps) {
         </div>
       }
     >
-      <Canvas flat dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 42 }}>
+      <Canvas
+        flat
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 5], fov: 42 }}
+        frameloop={inView ? "always" : "demand"} // ← вне вьюпорта – не рендерим кадры
+      >
         <ambientLight intensity={0.4} />
         <directionalLight position={[5, 5, 5]} intensity={1.5} />
         <pointLight position={[-5, -2, -5]} intensity={1} color="#c2ff3f" />

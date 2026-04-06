@@ -21,7 +21,15 @@ interface FormFieldProps {
   required?: boolean;
 }
 
-const GROUP_LEVELS = ["NOT_SET", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
+// --- Русские названия уровней (аналогично skillLevelLabels) ---
+const LEVEL_LABELS: Record<string, string> = {
+  NOT_SET: "Не указан",
+  BEGINNER: "Начинающий",
+  INTERMEDIATE: "Средний",
+  ADVANCED: "Продвинутый",
+};
+
+const GROUP_LEVELS = Object.keys(LEVEL_LABELS);
 const LOCATIONS = ["Karon Beach", "Kata-Noi Beach", "Nai-Harn beach"];
 
 const FIELD_CLASSES =
@@ -80,7 +88,7 @@ const FormSelect = ({
       >
         {options.map((opt) => (
           <option key={opt} value={opt} className="bg-[#161618] text-white">
-            {opt}
+            {LEVEL_LABELS[opt] || opt}
           </option>
         ))}
       </select>
@@ -107,7 +115,7 @@ export function TrainingModal({
           title: "",
           location: LOCATIONS[0],
           coachName: "Евгений Сысоев",
-          targetLevel: GROUP_LEVELS[0],
+          targetLevel: GROUP_LEVELS[0], // "NOT_SET"
           startTime: "07:00",
           endTime: "09:00",
           maxParticipants: 10,

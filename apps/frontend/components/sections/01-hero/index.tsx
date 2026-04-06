@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { motion, useScroll } from "framer-motion";
 import { HeroBackground } from "./hero-background";
 import { HeroContent } from "./hero-content";
@@ -20,22 +20,27 @@ export default function Hero({ introFinished }: HeroProps) {
     offset: ["start start", "end start"],
   });
 
-  const { backgroundY, contentOpacity, contentScale, contentBlur } =
+  const { backgroundY, contentOpacity, contentScale } =
     useHeroAnimations(scrollYProgress);
 
-  const clipShape = "polygon(0% 0%, 100% 0%, 100% 90%, 73% 95%, 0% 80%)";
+  // ✅ фиксируем clipPath (не пересоздаётся)
+  const clipShape = useMemo(
+    () => "polygon(0% 0%, 100% 0%, 100% 90%, 73% 95%, 0% 80%)",
+    [],
+  );
 
   return (
     <div className="bg-transparent w-full flex flex-col relative">
-      {/* 1. ОБОЛОЧКА ДЛЯ СВЕЧЕНИЯ */}
+      {/* Обёртка */}
       <div className="relative w-full h-dvh drop-shadow-[0_0_7px_rgba(163,230,53,0.5)]">
-        {/* ВНЕШНИЙ КОНТЕЙНЕР-БОРДЕР */}
         <section
           ref={containerRef}
           className="relative w-full h-full overflow-hidden shrink-0 bg-brand-lime"
-          style={{ clipPath: clipShape }}
+          style={{
+            clipPath: clipShape,
+            contain: "layout paint size",
+          }}
         >
-          {/* ВНУТРЕННИЙ КОНТЕЙНЕР */}
           <div
             className="relative w-full h-full overflow-hidden"
             style={{
@@ -48,10 +53,9 @@ export default function Hero({ introFinished }: HeroProps) {
             <motion.div
               className="relative z-10 h-full w-full flex flex-col items-center justify-center px-4"
               style={{
-                filter: contentBlur,
                 opacity: contentOpacity,
                 scale: contentScale,
-                willChange: "filter, opacity, transform",
+                willChange: "transform, opacity",
               }}
             >
               <HeroContent introFinished={introFinished} />

@@ -1,9 +1,9 @@
-# compiled output
+# скомпилированный вывод
 /dist
 /node_modules
 /build
 
-# Logs
+# логи
 logs
 *.log
 npm-debug.log*
@@ -12,14 +12,14 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
+# ОС
 .DS_Store
 
-# Tests
+# тесты
 /coverage
 /.nyc_output
 
-# IDEs and editors
+# IDE и редакторы
 /.idea
 .project
 .classpath
@@ -35,24 +35,24 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
+# файлы переменных окружения dotenv
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
-# temp directory
+# временная директория
 .temp
 .tmp
 
-# Runtime data
+# данные времени выполнения
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
+# диагностические отчеты (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma

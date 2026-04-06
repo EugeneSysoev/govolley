@@ -9,6 +9,7 @@ import {
   useMotionValue,
   useVelocity,
   useAnimationFrame,
+  useInView,
 } from "framer-motion";
 
 const wrap = (min: number, max: number, v: number) => {
@@ -16,6 +17,8 @@ const wrap = (min: number, max: number, v: number) => {
   return ((((v - min) % rangeSize) + rangeSize) % rangeSize) + min;
 };
 
+const REPEAT_COUNT = 4;
+const REPEAT_ITEMS = Array.from({ length: REPEAT_COUNT }, (_, i) => i);
 interface ParallaxProps {
   children: string;
   baseVelocity: number;
@@ -28,6 +31,7 @@ function ParallaxText({
   className,
 }: ParallaxProps) {
   const baseX = useMotionValue(0);
+
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
 
@@ -44,34 +48,41 @@ function ParallaxText({
 
   const directionFactor = useRef<number>(1);
 
+  // 👇 ВАЖНО: отключаем вне viewport
+  const containerRef = useRef(null);
+  const isInView = useInView(containerRef, { margin: "-5%" });
+
   useAnimationFrame((t, delta) => {
+    if (!isInView) return;
+
+    const velocity = velocityFactor.get();
+
     let moveBy = directionFactor.current * baseVelocity * (delta / 1000);
 
-    if (velocityFactor.get() < 0) {
-      directionFactor.current = -1;
-    } else if (velocityFactor.get() > 0) {
-      directionFactor.current = 1;
-    }
+    if (velocity < 0) directionFactor.current = -1;
+    else if (velocity > 0) directionFactor.current = 1;
 
-    moveBy += directionFactor.current * moveBy * velocityFactor.get();
+    moveBy += directionFactor.current * moveBy * velocity;
+
     baseX.set(baseX.get() + moveBy);
   });
 
   return (
-    <div className="overflow-hidden whitespace-nowrap flex flex-nowrap py-4 select-none pointer-events-none">
+    <div
+      ref={containerRef}
+      className="relative overflow-hidden whitespace-nowrap flex flex-nowrap py-4 select-none pointer-events-none"
+    >
       <motion.div
         className="flex whitespace-nowrap flex-nowrap"
         style={{
           x,
-          translateZ: 0,
-          perspective: "1000px",
-          backfaceVisibility: "hidden",
+          willChange: "transform",
         }}
       >
-        {[1, 2, 3, 4].map((i) => (
+        {REPEAT_ITEMS.map((i) => (
           <span
             key={i}
-            className={`${className} block will-change-transform`}
+            className={`${className} block`}
             style={{ paddingRight: "1.2rem" }}
           >
             {children}

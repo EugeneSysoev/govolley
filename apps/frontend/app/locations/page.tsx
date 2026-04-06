@@ -1,10 +1,12 @@
 "use client";
 
+// Импорт компонентов и библиотек
 import dynamic from "next/dynamic";
 import GlobalBackground from "@/components/background/global-background";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+// Динамический импорт карты локаций без SSR
 const LocationMap = dynamic(
   () => import("./locations-map").then((mod) => mod.LocationMap),
   {
@@ -15,12 +17,14 @@ const LocationMap = dynamic(
   },
 );
 
+// Компонент страницы локаций
 export default function LocationsPage() {
   return (
     <main className="relative min-h-screen pt-30 lg:pt-40 overflow-hidden">
       <GlobalBackground />
 
       <div className="container relative z-10 mx-auto px-4">
+        {/* Заголовок страницы */}
         <header className="mb-5">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -31,6 +35,7 @@ export default function LocationsPage() {
           </motion.h1>
         </header>
 
+        {/* Ссылка на главную страницу */}
         <div className="mb-4">
           <Link
             href="/"
@@ -45,6 +50,7 @@ export default function LocationsPage() {
           </Link>
         </div>
 
+        {/* Карта локаций */}
         <LocationMap />
       </div>
     </main>

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -14,7 +14,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
@@ -22,7 +21,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@prisma/client": ["../../node_modules/.prisma/client"]
+      "@prisma/client": ["../backend/node_modules/.prisma/client"]
     }
   },
   "include": [

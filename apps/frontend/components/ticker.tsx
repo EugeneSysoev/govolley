@@ -13,7 +13,7 @@ export default function TextScrollTransition() {
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.01, // Увеличили порог покоя для разгрузки процессора
+    restDelta: 0.01,
   });
 
   // Используем чуть меньший диапазон смещения
@@ -26,7 +26,7 @@ export default function TextScrollTransition() {
     <section
       ref={containerRef}
       // Добавили контент-визибилити для оптимизации рендера
-      className="pt-3 bg-transparent overflow-hidden flex flex-col gap-4 select-none"
+      className="relative pt-3 bg-transparent overflow-hidden flex flex-col gap-4 select-none"
       style={{ contentVisibility: 'auto' }} 
     >
       {words.map((word, index) => {

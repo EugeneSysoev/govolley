@@ -14,7 +14,7 @@ enum Role {
 
 enum SkillLevel {
   NOT_SET
-  BEGINNER     // Новичок
+  BEGINNER     // Начинающий
   INTERMEDIATE // Средний
   ADVANCED     // Продвинутый
 }
@@ -25,7 +25,7 @@ model User {
   username        String?       @unique // Тег в Telegram (@username)
   firstName       String?       
   lastName        String?
-  image           String?       // Оставляем пустым по дефолту
+  image           String?
   
   role            Role          @default(USER)
   skillLevel      SkillLevel    @default(NOT_SET)
@@ -49,7 +49,6 @@ model Training {
   endTime             String
   targetLevel         SkillLevel    @default(NOT_SET)
   maxParticipants     Int           @default(10)
-  currentParticipants Int           @default(0)
   price               Float?
   location            String?
   coachName           String?

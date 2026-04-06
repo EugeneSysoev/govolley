@@ -27,7 +27,6 @@
     "noPropertyAccessFromIndexSignature": false,
 
     // Path aliases
-    "baseUrl": ".",
     "paths": {
       "@govolley/*": ["./packages/*/src/index.ts"]
     }

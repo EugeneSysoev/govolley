@@ -16,7 +16,7 @@ export default function AboutCreatorSection() {
             <motion.span
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              className="text-brand-lime font-mono text-[clamp(0.6rem,2vw,0.8rem)] tracking-[0.3em] uppercase block mb-4"
+              className="relative text-brand-lime font-mono text-[clamp(0.6rem,2vw,0.8rem)] tracking-[0.3em] uppercase block mb-4"
             >
               {CREATOR_MANIFESTO.badge}
             </motion.span>
@@ -32,7 +32,7 @@ export default function AboutCreatorSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 2, duration: 1 }}
-            className="mt-5 flex items-center gap-4"
+            className="relative mt-5 flex items-center gap-4"
           ></motion.div>
         </div>
       </div>

@@ -3,20 +3,40 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import GlobalBackground from "@/components/background/global-background";
-import { CalendarStrip } from "./calendar-strip";
+import { SwipeCalendar } from "./swipe-calendar";
 import { TrainingCard } from "./training-card";
 import { TrainingModal } from "./training-modal";
 import { trainingApi } from "./api";
 import { Training } from "./types";
 
 export default function TrainingPage() {
+  const { data: session, status } = useSession();
+  const userRole = session?.user?.role as string | undefined;
+
   const [trainings, setTrainings] = useState<Training[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
+  const [isCalendarOpen, setCalendarOpen] = useState(false);
 
-  // Загрузка данных с защитой от некорректных ответов
+  // Инициализация даты из localStorage
+  const getInitialDate = (): Date => {
+    if (typeof window === "undefined") return new Date();
+    const stored = localStorage.getItem("training_selected_date");
+    if (!stored) return new Date();
+    const parsed = new Date(stored);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
+  const [selectedDate, setSelectedDate] = useState<Date>(getInitialDate);
+
+  // Сохранение даты при изменении
+  useEffect(() => {
+    localStorage.setItem("training_selected_date", selectedDate.toISOString());
+  }, [selectedDate]);
+
+  // Функция загрузки тренировок (была удалена – восстанавливаем)
   const refreshData = async () => {
     try {
       const data = await trainingApi.getAll();
@@ -31,20 +51,9 @@ export default function TrainingPage() {
     refreshData();
   }, []);
 
-  const calendarDates = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        return d;
-      }),
-    [],
-  );
-
-  // Защищенная фильтрация
+  // Фильтрация тренировок по выбранной дате
   const filteredTrainings = useMemo(() => {
     if (!Array.isArray(trainings)) return [];
-
     return trainings.filter((t) => {
       if (!t.date) return false;
       return new Date(t.date).toDateString() === selectedDate.toDateString();
@@ -67,8 +76,27 @@ export default function TrainingPage() {
     }
   };
 
+  // Форматирование выбранной даты для отображения
+  const formattedDate = selectedDate.toLocaleDateString("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  // Проверка прав на создание / редактирование
+  const canManage = userRole === "COACH" || userRole === "ADMIN";
+
+  // Пока ничего не рендерим, пока сессия загружается (опционально)
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-white/60">Загрузка...</div>
+      </div>
+    );
+  }
+
   return (
-    <main className="relative min-h-screen pt-30 lg:pt-40 pb-20 overflow-hidden">
+    <main className="relative min-h-screen pt-30 lg:pt-40 overflow-hidden">
       <GlobalBackground />
 
       <div className="container relative z-10 mx-auto px-4">
@@ -100,23 +128,52 @@ export default function TrainingPage() {
             </Link>
           </motion.div>
 
-          <CalendarStrip
-            dates={calendarDates}
-            selectedDate={selectedDate}
-            onSelect={setSelectedDate}
-          />
+          {/* Блок выбора даты */}
+          <div className="flex items-center justify-between max-w-md mx-auto mt-4 mb-6 px-6 py-4 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex flex-col">
+              <span className="text-white font-light text-lg tracking-tight">
+                {formattedDate}
+              </span>
+            </div>
 
-          <div className="flex justify-center w-full">
             <button
-              onClick={() => {
-                setEditingTraining(null);
-                setModalOpen(true);
-              }}
-              className="mt-4 px-10 py-4 bg-brand-lime text-black font-black uppercase text-[11px] tracking-widest rounded-full hover:scale-105 transition-transform drop-shadow-xl/25"
+              onClick={() => setCalendarOpen(true)}
+              className="group relative flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-brand-lime rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-lime/50"
+              aria-label="Открыть календарь"
             >
-              + Создать тренировку
+              <svg
+                className="w-4 h-4 text-white/80 group-hover:text-black transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span className="hidden sm:inline text-xs font-medium uppercase tracking-wider text-white/80 group-hover:text-black transition-colors">
+                Выбрать дату
+              </span>
             </button>
           </div>
+
+          {/* Кнопка создания тренировки (только для COACH/ADMIN) */}
+          {canManage && (
+            <div className="flex justify-center w-full">
+              <button
+                onClick={() => {
+                  setEditingTraining(null);
+                  setModalOpen(true);
+                }}
+                className="mt-4 px-10 py-4 bg-brand-lime text-black font-black uppercase text-[11px] tracking-widest rounded-full hover:scale-105 transition-transform drop-shadow-xl/25"
+              >
+                + Создать тренировку
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="container mx-auto px-4 mt-8">
@@ -135,6 +192,7 @@ export default function TrainingPage() {
                     training={t}
                     onEdit={() => handleEdit(t)}
                     onDelete={() => handleDelete(t.id)}
+                    userRole={userRole} // передаём роль для отображения кнопок
                   />
                 ))}
               </motion.div>
@@ -156,6 +214,13 @@ export default function TrainingPage() {
           onSave={refreshData}
           initialData={editingTraining}
           selectedDate={selectedDate}
+        />
+
+        <SwipeCalendar
+          isOpen={isCalendarOpen}
+          onClose={() => setCalendarOpen(false)}
+          selectedDate={selectedDate}
+          onSelect={setSelectedDate}
         />
       </div>
     </main>

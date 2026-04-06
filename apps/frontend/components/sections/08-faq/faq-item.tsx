@@ -23,7 +23,7 @@ export const FaqItem = ({
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: index * 0.1 }}
-      className="border-b border-white/10"
+      className="relative border-b border-white/10"
     >
       <button
         onClick={toggle}

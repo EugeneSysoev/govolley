@@ -4,7 +4,7 @@ import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import NextImage from "next/image";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation"; // Добавлен usePathname
+import { useRouter, usePathname } from "next/navigation";
 import RollingLink from "@/components/navbar/rolling-link";
 import WeatherWidget from "@/components/navbar/weather-widget";
 import { MagneticButton } from "@/components/magnetic-button";
@@ -12,7 +12,7 @@ import { MobileMenu } from "@/components/navbar/mobile-menu";
 
 interface NavbarProps {
   introFinished: boolean;
-  isScrolled: boolean;
+  isScrolled?: boolean;
 }
 
 const NAV_LINKS = [
@@ -21,6 +21,12 @@ const NAV_LINKS = [
   { name: "Площадки", href: "/locations" },
 ];
 
+const NAV_ANIMATION = {
+  visible: { y: 0, opacity: 1 },
+  hidden: { y: "-100%", opacity: 0 },
+};
+const NAV_TRANSITION = { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const };
+
 export default function Navbar({ introFinished }: NavbarProps) {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -28,7 +34,7 @@ export default function Navbar({ introFinished }: NavbarProps) {
 
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname(); // Для определения активной страницы
+  const pathname = usePathname();
 
   const { scrollY } = useScroll();
 
@@ -38,16 +44,18 @@ export default function Navbar({ introFinished }: NavbarProps) {
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
-    setLocalIsAtTop(latest < 10);
-    setIsVisible(latest < previous || latest <= 10);
+    const delta = Math.abs(latest - previous);
+    if (delta < 2) return;
+
+    const atTop = latest < 5;
+    setLocalIsAtTop(atTop);
+    setIsVisible(latest < previous || atTop);
   });
 
-  // Логика блокировки: залогинен, но не прошел тест
   const isLocked =
     status === "authenticated" &&
     (session?.user as any)?.skillLevel === "NOT_SET";
 
-  // Фильтруем ссылки для десктопа и мобилки
   const filteredLinks = isLocked
     ? NAV_LINKS.filter((link) => link.href === "/")
     : NAV_LINKS;
@@ -57,13 +65,11 @@ export default function Navbar({ introFinished }: NavbarProps) {
       router.push("/auth/signin");
       return;
     }
-
     const user = session?.user as any;
-
     if (!user?.skillLevel || user?.skillLevel === "NOT_SET") {
-      router.push("/onboarding"); // Исправлено на правильный путь
+      router.push("/onboarding");
     } else {
-      router.push("/profile"); // Исправлено на правильный путь
+      router.push("/profile");
     }
   };
 
@@ -78,19 +84,28 @@ export default function Navbar({ introFinished }: NavbarProps) {
 
   if (!mounted || !introFinished) return null;
 
+  const backgroundColor = localIsAtTop ? "transparent" : "rgba(0, 0, 0, 0.5)";
+  const backdropBlur = localIsAtTop ? "none" : "blur(4px)";
+
   return (
     <motion.header
-      variants={{
-        visible: { y: 0, opacity: 1 },
-        hidden: { y: "-100%", opacity: 0 },
-      }}
+      variants={NAV_ANIMATION}
       initial="hidden"
       animate={isVisible ? "visible" : "hidden"}
-      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      className={`fixed top-0 left-0 right-0 z-9999 transition-colors duration-500 ${
-        localIsAtTop ? "bg-transparent" : "bg-black/50 backdrop-blur-xs"
-      }`}
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      transition={NAV_TRANSITION}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        backgroundColor,
+        backdropFilter: backdropBlur,
+        paddingTop: "env(safe-area-inset-top)",
+        willChange: "transform",
+        backfaceVisibility: "hidden",
+      }}
+      className="transition-[background-color,backdrop-filter] duration-300"
     >
       <div
         className={`container mx-auto px-6 md:px-25 flex items-center transition-[height] duration-500 ${
@@ -99,7 +114,6 @@ export default function Navbar({ introFinished }: NavbarProps) {
       >
         <div className="flex items-center gap-4 md:gap-10 shrink-0">
           <div className="lg:hidden flex items-center justify-center">
-            {/* Пробрасываем отфильтрованные ссылки в мобильное меню */}
             <MobileMenu links={filteredLinks} />
           </div>
 

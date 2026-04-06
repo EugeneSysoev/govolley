@@ -1,68 +1,49 @@
-/**
- * Уровни подготовки участников
- */
-export enum SkillLevel {
-  NOT_SET = "NOT_SET",
-  BEGINNER = "BEGINNER",
-  INTERMEDIATE = "INTERMEDIATE",
-  ADVANCED = "ADVANCED",
-}
+export * from "./enums";
+export * from "./ids";
 
 /**
- * Роли пользователей в системе
- */
-export enum Role {
-  USER = "USER",
-  COACH = "COACH",
-  ADMIN = "ADMIN",
-}
-
-/**
- * Тренировка
+ * Training
  */
 export interface Training {
   id: number;
   title: string;
   description: string | null;
-  date: Date | string;
+  date: string;
   startTime: string;
   endTime: string;
-  targetLevel: SkillLevel;
+  targetLevel: import("./enums").SkillLevel;
   maxParticipants: number;
   currentParticipants: number;
   price: number | null;
   coachName: string | null;
   location: string | null;
   isActive: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
- * DTO для создания тренировки
+ * DTO
  */
 export interface CreateTrainingDto {
   title: string;
   description?: string | null;
-  date: Date | string;
+  date: string;
   startTime: string;
   endTime: string;
-  targetLevel: SkillLevel;
+  targetLevel: import("./enums").SkillLevel;
   maxParticipants?: number;
   price?: number | null;
   coachName?: string | null;
   location?: string | null;
 }
 
-/**
- * DTO для обновления тренировки
- */
 export interface UpdateTrainingDto extends Partial<CreateTrainingDto> {
   isActive?: boolean;
 }
 
 /**
- * Пользователь системы
+ * User
  */
 export interface User {
   id: number;
@@ -71,23 +52,23 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   image: string | null;
-  role: Role;
-  skillLevel: SkillLevel;
+  role: import("./enums").Role;
+  skillLevel: import("./enums").SkillLevel;
   isLevelVerified: boolean;
   balance: number;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
- * Бронирование места на тренировке
+ * Booking
  */
 export interface Booking {
   id: number;
   userId: number;
   trainingId: number;
-  status: "CONFIRMED" | "CANCELLED";
-  paymentType: "CASH" | "BALANCE";
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  status: import("./enums").BookingStatus;
+  paymentType: import("./enums").PaymentType;
+  createdAt: string;
+  updatedAt: string;
 }

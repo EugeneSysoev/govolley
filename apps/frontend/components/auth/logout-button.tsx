@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 
+// Кнопка для выхода из системы
 export default function LogoutButton() {
   return (
     <button

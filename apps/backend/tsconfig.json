@@ -3,10 +3,9 @@
     "target": "ES2022",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "bun"],
     "rootDir": ".",
     "outDir": "./dist",
-    "baseUrl": ".",
     "paths": {
       "@govolley/shared-types": ["../../packages/shared-types/src/index.ts"]
     },

@@ -8,12 +8,13 @@ import VolleyballScene from "./volley-ball-scene";
 
 export default function TheorySection() {
   const { ref: sectionRef, inView: sectionInView } = useInView({
-    triggerOnce: false,
     threshold: 0.1,
+    // triggerOnce: false – не нужен, оставляем по умолчанию (false)
   });
 
   return (
-    <section id="theory"
+    <section
+      id="theory"
       ref={sectionRef}
       className="min-h-screen flex items-center justify-center py-25 px-5 relative bg-transparent text-white"
     >
@@ -34,9 +35,8 @@ export default function TheorySection() {
           </div>
         </div>
 
-        {/* 3D Сцена с мячом */}
+        {/* 3D Сцена с мячом – теперь не размонтируется */}
         <div className="order-1 lg:order-2 w-full h-100 lg:h-150 relative flex items-center justify-center">
-          {/* Крути */}
           <div className="absolute top-1 lg:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
             <span className="text-brand-lime/90 font-mono text-[clamp(0.5rem,5vw,1.5rem)] uppercase tracking-widest drop-shadow-md/50 animate-pulse">
               Крути

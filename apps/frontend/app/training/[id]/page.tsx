@@ -25,7 +25,7 @@ export default async function TrainingDetailPage({
   );
 
   return (
-    <div className="relative min-h-screen text-white pt-30 lg:pt-40 pb-20 overflow-hidden">
+    <div className="relative text-white pt-30 lg:pt-40 overflow-hidden">
       <GlobalBackground />
 
       <div className="container relative z-10 mx-auto px-4">

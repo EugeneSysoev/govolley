@@ -1,15 +1,18 @@
 "use client";
 
+// Импорты хуков и SDK для карты
 import { useRef, useEffect, useCallback } from "react";
 import * as maptilersdk from "@maptiler/sdk";
 import "@maptiler/sdk/dist/maptiler-sdk.css";
 import { LOCATIONS } from "./constants";
 
+// Интерфейс пропсов для LocationCard
 interface LocationCardProps {
   loc: (typeof LOCATIONS)[0];
   onFlyTo: (lng: number, lat: number) => void;
 }
 
+// Компонент карточки локации
 const LocationCard = ({ loc, onFlyTo }: LocationCardProps) => (
   <div
     onClick={() => onFlyTo(loc.lng, loc.lat)}
@@ -42,10 +45,13 @@ const LocationCard = ({ loc, onFlyTo }: LocationCardProps) => (
   </div>
 );
 
+// Основной компонент карты с локациями
 export const LocationMap = () => {
+  // Рефы для контейнера и экземпляра карты
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maptilersdk.Map | null>(null);
 
+  // Функция перемещения карты к координатам
   const handleFlyTo = useCallback((lng: number, lat: number) => {
     map.current?.flyTo({
       center: [lng, lat],
@@ -54,6 +60,7 @@ export const LocationMap = () => {
     });
   }, []);
 
+  // Инициализация карты при монтировании
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
@@ -66,6 +73,7 @@ export const LocationMap = () => {
 
     if (!mapContainer.current || map.current) return;
 
+    // Создание экземпляра карты
     map.current = new maptilersdk.Map({
       container: mapContainer.current,
       style: `https://api.maptiler.com/maps/streets-v4/style.json?key=${apiKey}`,
@@ -73,6 +81,7 @@ export const LocationMap = () => {
       zoom: 11,
     });
 
+    // Добавление маркеров после загрузки
     map.current.on("load", () => {
       LOCATIONS.forEach((loc) => {
         const marker = new maptilersdk.Marker({ color: "#BEFF00" })
@@ -86,6 +95,7 @@ export const LocationMap = () => {
       });
     });
 
+    // Очистка при размонтировании
     return () => {
       map.current?.remove();
       map.current = null;
@@ -94,18 +104,19 @@ export const LocationMap = () => {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 w-full max-w-7xl mx-auto p-4 bg-brand-white/5 backdrop-blur-md border border-white/10 rounded-[48px]">
-      {/* КАРТА */}
+      {/* Контейнер карты */}
       <div className="relative grow h-100 lg:h-110 rounded-[40px] overflow-hidden border border-white/5 shadow-2xl">
         <div ref={mapContainer} className="w-full h-full" />
       </div>
 
-      {/* КАРТОЧКИ */}
+      {/* Список карточек локаций */}
       <div className="flex flex-col gap-2 lg:w-137.5 w-full shrink-0">
         {LOCATIONS.map((loc) => (
           <LocationCard key={loc.id} loc={loc} onFlyTo={handleFlyTo} />
         ))}
       </div>
 
+      {/* Скрытие элементов управления карты */}
       <style jsx global>{`
         .maplibregl-ctrl-attrib,
         .maplibregl-ctrl-logo {

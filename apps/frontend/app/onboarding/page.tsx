@@ -1,137 +1,100 @@
 "use client";
 
+// Импорты
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { QUESTIONS } from "./constants";
 
-const QUESTIONS = [
-  {
-    id: 1,
-    text: "Как часто вы играете в пляжный волейбол 2х2?",
-    options: [
-      { label: "Редко или никогда (зал/классика)", score: 1 },
-      { label: "Периодически (1-2 раза в месяц)", score: 2 },
-      { label: "Регулярно тренируюсь с тренером", score: 3 },
-      { label: "Постоянно участвую в турнирах", score: 4 },
-    ],
-  },
-  {
-    id: 2,
-    text: "Насколько стабильна ваша подача?",
-    options: [
-      { label: "Часто ошибаюсь, главное перекинуть", score: 1 },
-      { label: "Стабильно, но без направления/силы", score: 2 },
-      { label: "Точно в зону или сложный планер", score: 3 },
-      { label: "Силовая в прыжке или острый планер", score: 4 },
-    ],
-  },
-  {
-    id: 3,
-    text: "Оцените ваш контроль мяча (пас напарнику):",
-    options: [
-      { label: "Мяч часто летит не туда", score: 1 },
-      { label: "Довожу до сетки, но пас неудобный", score: 2 },
-      { label: "Стабильный пас под атаку", score: 3 },
-      { label: "Идеально под рабочую руку", score: 4 },
-    ],
-  },
-  {
-    id: 4,
-    text: "Знакомы ли вы с тактикой защиты и блоков?",
-    options: [
-      { label: "Просто стараюсь отбить мяч", score: 1 },
-      { label: "Знаю позиции, но часто путаюсь", score: 2 },
-      { label: "Использую сигналы пальцами, крою зоны", score: 3 },
-      { label: "Читаю нападающего, полная координация", score: 4 },
-    ],
-  },
-  {
-    id: 5,
-    text: "Ваше отношение к погоде (ветер, песок):",
-    options: [
-      { label: "Ветер делает игру невозможной", score: 1 },
-      { label: "Сильно мешает, быстро устаю", score: 2 },
-      { label: "Умею делать поправку на ветер", score: 3 },
-      { label: "Погода не влияет, использую ветер", score: 4 },
-    ],
-  },
-];
+// URL бэкенда
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:3000/api";
 
 export default function OnboardingPage() {
+  // Сессия пользователя
   const { data: session, update } = useSession();
+  // Текущий шаг и ответы
   const [currentStep, setCurrentStep] = useState(0);
-  const [totalScore, setTotalScore] = useState(0);
+  const [answers, setAnswers] = useState<(number | null)[]>(
+    new Array(QUESTIONS.length).fill(null),
+  );
+  // Состояние отправки
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  // Извлекаем userId безопасно
-  const userId = (session?.user as any)?.id;
+  // Расчет общего балла
+  const totalScore = answers.reduce<number>((sum, val) => sum + (val ?? 0), 0);
 
+  // Обработка выбора ответа
   const handleAnswer = (score: number) => {
-    const nextScore = totalScore + score;
+    const newAnswers = [...answers];
+    newAnswers[currentStep] = score;
+    const trimmedAnswers = newAnswers.slice(0, currentStep + 1);
+    setAnswers(trimmedAnswers);
+
     if (currentStep < QUESTIONS.length - 1) {
-      setTotalScore(nextScore);
       setCurrentStep(currentStep + 1);
     } else {
-      // Чтобы избежать проблем с асинхронностью стейта, передаем счет напрямую
-      finishTest(nextScore);
+      // Финальный балл с коррекцией
+      const finalScore = totalScore + score - (answers[currentStep] ?? 0);
+      finishTest(finalScore);
     }
   };
 
+  // Возврат к предыдущему шагу
+  const goBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Завершение теста и отправка на бэкенд
   const finishTest = async (finalScore: number) => {
-    if (!userId) {
-      console.error("USER ID IS MISSING");
+    const token = (session as any)?.accessToken;
+    if (!token) {
       alert(
-        "Ошибка: сессия истекла или ID пользователя не найден. Перезайдите на сайт.",
+        "Ошибка: Токен не найден. Попробуйте обновить страницу или войти заново.",
       );
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const API_ENDPOINT = "/api/users/complete-onboarding";
-      console.log("Submitting Onboarding:", { userId, totalScore: finalScore });
-
-      const res = await fetch(API_ENDPOINT, {
+      const res = await fetch(`${BACKEND_URL}/users/complete-onboarding`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
           "ngrok-skip-browser-warning": "69420",
         },
-        body: JSON.stringify({ userId, totalScore: finalScore }),
+        body: JSON.stringify({ totalScore: finalScore }),
       });
 
       if (res.ok) {
         const data = await res.json();
-
-        // 1. Обновляем локальную сессию NextAuth.
-        // Передаем новый уровень, чтобы AuthGuard пропустил нас дальше.
         await update({
+          ...session,
           user: {
             ...session?.user,
-            skillLevel: data.level,
+            skillLevel: data.skillLevel,
           },
         });
-
-        console.log("Session updated locally. Redirecting...");
-
-        // 2. Жесткий редирект для сброса кэша всех гардов
-        window.location.href = "/profile";
+        router.push("/profile");
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.error("Backend Error Response:", errorData);
         alert(
-          `Ошибка сохранения: ${errorData.message || "Неверный формат данных"}`,
+          `Ошибка: ${errorData.message || "Не удалось сохранить результат"}`,
         );
       }
     } catch (error) {
-      console.error("Onboarding submission error:", error);
-      alert("Не удалось связаться с сервером. Проверьте соединение.");
+      console.error("Ошибка отправки:", error);
+      alert("Не удалось связаться с сервером бэкенда.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Текущий вопрос
+  const currentQuestion = QUESTIONS[currentStep];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-transparent">
@@ -142,13 +105,13 @@ export default function OnboardingPage() {
             <span className="text-brand-lime font-bold text-sm tracking-widest uppercase">
               Определяем твой уровень
             </span>
-            <span className="text-zinc-500 text-xs">
+            <span className="text-zinc-400 text-xs font-mono">
               {currentStep + 1} / {QUESTIONS.length}
             </span>
           </div>
-          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-brand-lime h-full transition-all duration-500 ease-out"
+              className="bg-brand-lime h-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(163,230,53,0.5)]"
               style={{
                 width: `${((currentStep + 1) / QUESTIONS.length) * 100}%`,
               }}
@@ -157,29 +120,55 @@ export default function OnboardingPage() {
         </div>
 
         {/* Вопрос */}
-        <h2 className="text-2xl font-bold mb-8 text-white leading-tight">
-          {QUESTIONS[currentStep].text}
-        </h2>
-
-        {/* Варианты */}
-        <div className="space-y-3">
-          {QUESTIONS[currentStep].options.map((opt, index) => (
-            <button
-              key={index}
-              disabled={isSubmitting}
-              onClick={() => handleAnswer(opt.score)}
-              className="w-full text-left p-5 rounded-2xl border border-white/5 bg-white/5 hover:bg-brand-lime hover:text-black hover:border-brand-lime transition-all duration-200 active:scale-[0.98] disabled:opacity-50 group"
-            >
-              <span className="font-semibold block">{opt.label}</span>
-            </button>
-          ))}
+        <div className="min-h-25 flex items-center mb-8">
+          <h2 className="text-2xl font-bold text-white leading-tight">
+            {currentQuestion.text}
+          </h2>
         </div>
 
-        {isSubmitting && (
-          <p className="mt-6 text-center text-zinc-500 text-sm animate-pulse">
-            Сохраняем ваш уровень...
-          </p>
-        )}
+        {/* Варианты ответов */}
+        <div className="space-y-3">
+          {currentQuestion.options.map((opt, index) => {
+            const isSelected = answers[currentStep] === opt.score;
+            return (
+              <button
+                key={index}
+                disabled={isSubmitting}
+                onClick={() => handleAnswer(opt.score)}
+                className={`w-full text-left p-5 rounded-2xl border transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group ${
+                  isSelected
+                    ? "bg-brand-lime text-black border-brand-lime"
+                    : "border-white/5 bg-white/5 hover:bg-brand-lime hover:text-black hover:border-brand-lime"
+                }`}
+              >
+                <span className="font-semibold block transition-colors">
+                  {opt.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Кнопка "Назад" и индикатор загрузки */}
+        <div className="mt-8 flex justify-between items-center">
+          {currentStep > 0 && !isSubmitting && (
+            <button
+              onClick={goBack}
+              className="text-white/40 hover:text-brand-lime text-sm uppercase tracking-wider font-mono transition-colors"
+            >
+              ← Назад
+            </button>
+          )}
+          <div className="flex-1" />
+          {isSubmitting && (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-brand-lime border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-zinc-400 text-xs animate-pulse">
+                Сохраняем...
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

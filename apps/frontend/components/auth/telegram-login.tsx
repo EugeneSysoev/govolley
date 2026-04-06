@@ -7,7 +7,7 @@ export default function TelegramLogin() {
   const [isWaiting, setIsWaiting] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Следим за статусом, если сессия инициализирована
+  // Проверяем статус сессии
   useEffect(() => {
     if (!sessionId) return;
 
@@ -39,11 +39,10 @@ export default function TelegramLogin() {
 
       if (data.sessionId && data.botUrl) {
         setSessionId(data.sessionId);
-        // АВТО-ОТКРЫТИЕ: открываем бота в новом окне сразу
         window.open(data.botUrl, "_blank");
       }
     } catch (e) {
-      alert("Ошибка");
+      alert("Ошибка при инициализации сессии");
       setIsWaiting(false);
     }
   };
@@ -57,7 +56,6 @@ export default function TelegramLogin() {
       >
         {isWaiting ? (
           <span className="flex items-center justify-center gap-2">
-            {/* Можно добавить мелкий спиннер */}
             Ждем подтверждения в боте
           </span>
         ) : (

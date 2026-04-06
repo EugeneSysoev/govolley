@@ -1,10 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
-
-// --- Анимации ---
 
 const sidebarVariants: Variants = {
   open: (height = 1000) => ({
@@ -35,9 +33,11 @@ const itemVariants = {
   },
 };
 
-// --- Основной компонент ---
-
-export const MobileMenu = ({ links }: { links: { name: string; href: string }[] }) => {
+export const MobileMenu = ({
+  links,
+}: {
+  links: { name: string; href: string }[];
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [windowHeight, setWindowHeight] = useState(1000);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +49,8 @@ export const MobileMenu = ({ links }: { links: { name: string; href: string }[] 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+
   return (
     <motion.nav
       initial={false}
@@ -57,14 +59,12 @@ export const MobileMenu = ({ links }: { links: { name: string; href: string }[] 
       ref={containerRef}
       className="relative z-10000 lg:hidden w-12 h-12 flex items-center justify-center"
     >
-      {/* Фон меню (вылетает из угла 0,0) */}
       <motion.div
         variants={sidebarVariants}
         className="fixed top-0 left-0 w-75 h-screen bg-white/2 backdrop-blur-xl shadow-2xl pointer-events-none"
         style={{ zIndex: -1, transform: "none" }}
       />
 
-      {/* Список ссылок */}
       <motion.ul
         variants={navVariants}
         className={`fixed top-0 left-0 w-75 h-screen p-8 pt-30 flex flex-col gap-6 ${
@@ -89,12 +89,10 @@ export const MobileMenu = ({ links }: { links: { name: string; href: string }[] 
         ))}
       </motion.ul>
 
-      <MenuToggle toggle={() => setIsOpen(!isOpen)} isOpen={isOpen} />
+      <MenuToggle toggle={toggle} isOpen={isOpen} />
     </motion.nav>
   );
 };
-
-// --- Вспомогательные компоненты ---
 
 const Path = (props: any) => (
   <motion.path
@@ -105,7 +103,13 @@ const Path = (props: any) => (
   />
 );
 
-const MenuToggle = ({ toggle, isOpen }: { toggle: () => void; isOpen: boolean }) => (
+const MenuToggle = ({
+  toggle,
+  isOpen,
+}: {
+  toggle: () => void;
+  isOpen: boolean;
+}) => (
   <button
     onClick={toggle}
     className="relative w-full h-full flex items-center justify-center z-10001 bg-transparent outline-none cursor-pointer"

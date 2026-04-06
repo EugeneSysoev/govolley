@@ -6,7 +6,6 @@ import Link from "next/link";
 import { NAVIGATION_LINKS, CONTACTS, SCHEDULE, SOCIALS } from "./constants";
 import { MarqueeSection } from "./running-line";
 
-// Вспомогательный UI-компонент заголовка
 const FooterHeading = ({ children }: { children: React.ReactNode }) => (
   <h4
     className="font-bold text-brand-lime uppercase tracking-[0.2em] opacity-90"
@@ -21,14 +20,12 @@ export default function Footer() {
 
   return (
     <footer className="relative overflow-hidden mt-10 lg:mt-25 border-t border-white/5">
-      {/* 1. БЕГУЩАЯ СТРОКА */}
       <MarqueeSection />
 
-      {/* 2. КОНТЕНТ */}
       <div className="pt-16 pb-8 lg:pt-25 lg:pb-12 bg-[#021524] relative z-10">
         <div className="container mx-auto px-6 lg:px-20">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 lg:gap-8">
-            {/* ЛОГО И СОЦСЕТИ */}
+            {/* Лого и соцсети */}
             <div className="col-span-1 lg:col-span-1 flex flex-col items-start lg:items-center -mt-5">
               <motion.div
                 initial={{ opacity: 0 }}
@@ -40,6 +37,7 @@ export default function Footer() {
                   src="/icons/volleyball1.svg"
                   alt="Logo"
                   fill
+                  sizes="(max-width: 768px) 160px, 176px"
                   className="object-contain transition-all duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-brand-lime/10 blur-3xl -z-10 rounded-full" />
@@ -60,7 +58,7 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* НАВИГАЦИЯ */}
+            {/* Навигация */}
             <div className="space-y-6">
               <FooterHeading>Навигация</FooterHeading>
               <ul className="space-y-4">
@@ -78,7 +76,7 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* КОНТАКТЫ */}
+            {/* Контакты */}
             <div className="space-y-6">
               <FooterHeading>Контакты</FooterHeading>
               <ul className="space-y-5 font-mono uppercase">
@@ -102,7 +100,7 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* ВРЕМЯ */}
+            {/* Время игры */}
             <div className="col-span-1 lg:col-span-1 space-y-6 pt-6 lg:pt-0 border-t lg:border-none border-white/5">
               <FooterHeading>Время игры</FooterHeading>
               <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
@@ -129,7 +127,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* НИЗ */}
           <div className="border-t border-white/5 font-mono mt-16 lg:mt-20 pt-8 flex justify-between items-center text-[10px] text-white/30 uppercase tracking-[0.2em]">
             <p>© {currentYear} GoVolley</p>
             <p>Phuket, TH</p>

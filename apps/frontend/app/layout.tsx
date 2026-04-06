@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import ClientLayout from "@/components/client-layout";
 import "./globals.css";
 
-// Подключение локальных шрифтов
 const theater = localFont({
   src: "../public/fonts/Theater2.woff2",
   variable: "--font-theater",
@@ -27,7 +26,6 @@ const mustica = localFont({
   display: "swap",
 });
 
-// Подключение Google шрифтов
 const comfortaa = Comfortaa({
   subsets: ["latin", "cyrillic"],
   variable: "--font-comfortaa",
@@ -42,6 +40,17 @@ const geologica = Geologica({
 export const metadata = {
   title: "GoVolley | Пляжный волейбол на Пхукете",
   description: "Повышай градус игры вместе с нами",
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -51,13 +60,12 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="ru" 
+      lang="ru"
+      data-scroll-behavior="smooth"
       className={`${comfortaa.variable} ${geologica.variable} ${theater.variable} ${mustica.variable} scroll-smooth custom-scrollbar`}
     >
       <body className="antialiased font-sans bg-brand-dark text-white min-h-screen selection:bg-brand-lime selection:text-brand-dark">
-
         <ClientLayout>{children}</ClientLayout>
-
         <div className="noise-overlay pointer-events-none fixed inset-0 z-100 opacity-[0.02]" />
       </body>
     </html>

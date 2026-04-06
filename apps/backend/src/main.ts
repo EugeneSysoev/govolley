@@ -2,44 +2,70 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { config } from 'dotenv';
+import { ensureUploadsDir } from './common/init/upload-dir.js';
 
 config();
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
   const app = await NestFactory.create(AppModule);
 
-  // Установка глобального префикса для всех маршрутов API
+  ensureUploadsDir();
+
+  // Глобальный префикс API
   app.setGlobalPrefix('api');
 
-  // Конфигурация CORS для допуска запросов с разрешённых источников
+  // Разрешенные источники
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3001',
+  ].filter((origin): origin is string => Boolean(origin));
+
+  // Настройка CORS
   app.enableCors({
-    origin: [
-      'http://localhost:3001',
-      'https://spathose-julie-unbreakable.ngrok-free.dev',
-      /\.ngrok-free\.app$/,
-    ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Для SSR, curl или мобильных приложений
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.ngrok-free.dev') ||
+        origin.endsWith('.ngrok-free.app');
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+
+      logger.warn(`❌ CORS заблокирован: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   });
 
-  // Глобальная валидация входных данных
+  // Глобальная валидация
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Удаление неопределённых свойств
-      transform: true, // Автоматическое преобразование типов
-      forbidNonWhitelisted: true, // Ошибка при наличии неизвестных полей
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
     }),
   );
 
   const port = process.env.PORT || 3000;
-  // Запуск сервера на адресе 0.0.0.0 для совместимости с ngrok
+
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 Backend запущен: http://localhost:${port}/api`);
+  logger.log(`🚀 Backend: http://localhost:${port}/api`);
 }
 
 bootstrap().catch((error) => {
-  console.error('❌ Критическая ошибка при запуске:', error);
+  console.error('❌ Ошибка запуска:', error);
   process.exit(1);
 });

@@ -9,11 +9,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { randomUUID } from 'node:crypto';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('bot-auth')
 export class AuthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
+  /** Инициализация новой сессии аутентификации */
   @Post('init-session')
   async initSession() {
     const sessionId = randomUUID();
@@ -27,6 +32,7 @@ export class AuthController {
     };
   }
 
+  /** Получение статуса сессии с проверкой на истечение */
   @Get('session-status/:id')
   async checkSessionStatus(@Param('id') id: string) {
     const session = await this.prisma.authSession.findUnique({ where: { id } });
@@ -42,6 +48,7 @@ export class AuthController {
     };
   }
 
+  /** Проверка подтвержденной сессии и возврат JWT токена */
   @Post('verify-confirmed-session')
   async verifyConfirmed(@Body() body: { sessionId: string }) {
     const session = await this.prisma.authSession.findUnique({
@@ -55,13 +62,25 @@ export class AuthController {
 
     const { user } = session;
 
-    // ЛОГ ДЛЯ ТЕРМИНАЛА БЭКЕНДА
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
     console.log(
       `[Auth] Verifying user ${user.id}. SkillLevel in DB: ${user.skillLevel}`,
     );
+    console.log('JWT Payload:', payload);
+    console.log(
+      'JWT Secret Check:',
+      process.env.NEXTAUTH_SECRET ? 'EXISTS' : 'MISSING',
+    );
+    console.log('Returning user with createdAt:', user.createdAt);
 
     return {
       id: user.id,
+      accessToken: this.jwtService.sign(payload),
       name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'Player',
       firstName: user.firstName,
       lastName: user.lastName,
@@ -69,7 +88,8 @@ export class AuthController {
       role: user.role,
       image: user.image,
       balance: user.balance,
-      skillLevel: user.skillLevel || 'NOT_SET', // Гарантируем строку, а не undefined
+      skillLevel: user.skillLevel || 'NOT_SET',
+      createdAt: user.createdAt,
     };
   }
 }

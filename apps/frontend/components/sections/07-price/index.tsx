@@ -7,7 +7,7 @@ import { PricingCard } from "./pricing-card";
 export default function PricingSection() {
   return (
     <section id="formats"
-    className="relative min-h-screen w-full flex flex-col justify-center px-6 lg:px-20 py-25 overflow-hidden">
+    className="relative min-h-screen w-full flex flex-col justify-center px-6 lg:px-20 pb-10 overflow-hidden">
       {/* ЗАГОЛОВОК СЕКЦИИ */}
       <div className="relative z-30 mb-5 text-center">
         <PremiumWordPullUp

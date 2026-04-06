@@ -18,7 +18,7 @@ export default function SignInPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 px-4">
-      {/* Заголовок и описание */}
+      {/* Заголовок страницы */}
       <div className="text-center space-y-3">
         <h1 className="text-3xl md:text-4xl font-bold text-brand-lime tracking-tight">
           {session ? "Твой профиль" : "Вход в аккаунт"}
@@ -30,7 +30,7 @@ export default function SignInPage() {
         )}
       </div>
 
-      {/* Основная карточка */}
+      {/* Карточка с контентом */}
       <div className="bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-md w-full max-w-87.5 shadow-2xl">
         {session ? (
           <div className="flex flex-col items-center space-y-6">
@@ -57,7 +57,6 @@ export default function SignInPage() {
             </button>
           </div>
         ) : (
-          /* Компонент с одной кнопкой внутри */
           <TelegramLogin />
         )}
       </div>

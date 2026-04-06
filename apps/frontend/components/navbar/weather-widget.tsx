@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Sun, Cloud, CloudRain, CloudLightning, Cloudy } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function WeatherWidget() {
-  const [mounted, setMounted] = useState(false);
+const WeatherWidget = memo(() => {
   const [data, setData] = useState({
     temp: "--",
     icon: "Clear",
   });
 
   useEffect(() => {
-    setMounted(true);
-
     const fetchWeather = async () => {
       try {
         const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
@@ -40,8 +37,6 @@ export default function WeatherWidget() {
 
     return () => clearInterval(weatherTimer);
   }, []);
-
-  if (!mounted) return null;
 
   const WeatherIcon = () => {
     const iconClass = "w-4 h-4 text-brand-lime";
@@ -70,7 +65,9 @@ export default function WeatherWidget() {
       }}
       className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.15em] text-brand-white/80"
     >
-      <span className="hidden sm:inline drop-shadow-xs/50">PHUKET, THAILAND</span>
+      <span className="hidden sm:inline drop-shadow-xs/50">
+        PHUKET, THAILAND
+      </span>
       <span className="sm:hidden drop-shadow-xs/50">PHUKET</span>
 
       <div className="flex items-center gap-1.5 ml-1 bg-brand-lime/10 px-2.5 py-1 rounded-full border border-brand-lime/10">
@@ -81,4 +78,8 @@ export default function WeatherWidget() {
       </div>
     </motion.div>
   );
-}
+});
+
+WeatherWidget.displayName = "WeatherWidget";
+
+export default WeatherWidget;

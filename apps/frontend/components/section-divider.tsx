@@ -56,7 +56,7 @@ export default function SectionDivider({
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="text-center" 
+                className="text-center relative"
               >
                 <h2 className="font-bold tracking-tight leading-[0.9] uppercase text-brand-white text-[clamp(0.8rem,4vw,2rem)] text-shadow-lg/25">
                   {text1} <br />
