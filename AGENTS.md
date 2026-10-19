@@ -6,6 +6,10 @@
 
 ## Agent skills
 
+### Development plan
+
+Перед реализацией задач MVP, выдачей задач подагентам или сборкой общего PR прочитайте [docs/agents/development-plan.md](docs/agents/development-plan.md): там роли навыков, граф зависимостей, порядок работы в отдельных worktree и критерии готовности реализации, интеграции и ревью.
+
 ### Issue tracker
 
 Перед чтением, созданием или обновлением задач используйте GitHub Issues `EugeneSysoev/govolley` по правилам [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
