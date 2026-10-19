@@ -11,6 +11,7 @@
 ### STD-001 — P2: OpenWeather API-ключ попадает в браузер
 
 - Статус: `open`.
+- Задача: [#14](https://github.com/EugeneSysoev/govolley/issues/14).
 - Основание: документированное правило README.md:19 — «В браузер попадает только публичный MapTiler key».
 - Код: `apps/frontend/components/navbar/weather-widget.tsx:16–20`.
 - Условие: при сборке клиентского компонента задан `NEXT_PUBLIC_OPENWEATHER_API_KEY`. Фактическое наличие и значение ключа в пользовательских env не проверялись.
@@ -21,6 +22,7 @@
 ### STD-002 — P3: четыре справочника уровней дублируются и расходятся
 
 - Статус: `open`.
+- Задача: [#4](https://github.com/EugeneSysoev/govolley/issues/4).
 - Тип: оценочное замечание `Duplicated Code`, а не нарушение обязательного стандарта.
 - Код: `apps/frontend/app/training/training-card.tsx:7–12`, `apps/frontend/app/training/training-modal.tsx:27–32`, `apps/frontend/app/training/[id]/booking-sidebar.tsx:10`, `apps/frontend/app/profile/profile-stats.tsx:4–9`.
 - Поведение: `BEGINNER` называется «Начинающий» в карточке и форме, но «Новичок» в деталях и профиле. Одно изменение списка уровней требует синхронизации четырёх карт.
@@ -32,6 +34,7 @@
 ### SPEC-001 — P1: редактируемый username может блокировать чужой вход через Telegram
 
 - Статус: `open`.
+- Задача: [#3](https://github.com/EugeneSysoev/govolley/issues/3).
 - Основание: корректность подтверждения личности Telegram, описанного в README.md:73. Требование о разрешении коллизий username отдельно не сформулировано; проблема выведена из рабочего сценария входа и кода.
 - Код: `apps/backend/src/auth/auth-session.service.ts:51–60`; разрешённое редактирование — `apps/backend/src/common/validators/user.schema.ts:3–9`; уникальность — `User.username` в `apps/backend/prisma/schema.prisma`.
 - Воспроизведение: пользователь A задаёт себе через `PATCH /api/users/profile` username пользователя B, который ещё не зарегистрирован в GoVolley. B начинает вход и подтверждает ссылку своим Telegram-аккаунтом. `confirm()` ищет пользователя по telegramId, но при создании копирует занятый username в уникальную колонку. Запрос получает P2002, вся транзакция подтверждения откатывается, вход B не завершается.
@@ -42,6 +45,7 @@
 ### SPEC-002 — P2: PATCH/DELETE тренировки возвращают неверный isBooked
 
 - Статус: `open`.
+- Задача: [#2](https://github.com/EugeneSysoev/govolley/issues/2).
 - Основание: README.md:95 — «isBooked относится к текущему пользователю».
 - Код: `apps/backend/src/training/training.service.ts:71,74–76`; вызывающий код — `apps/backend/src/training/training.controller.ts:56–65`.
 - Воспроизведение: COACH записывается на тренировку, затем изменяет её название через PATCH. Бронь сохраняется, но ответ содержит `isBooked: false`; GET той же тренировки с тем же токеном возвращает `true`. DELETE использует тот же путь формирования ответа и тоже возвращает false при сохранённой брони.
@@ -52,6 +56,7 @@
 ### SPEC-003 — P2: пустая строка локации отображается пустым полем
 
 - Статус: `open`.
+- Задача: [#4](https://github.com/EugeneSysoev/govolley/issues/4).
 - Основание: README.md:96 — «Пустая локация отображается как “Уточняется”».
 - Код: `packages/shared-types/src/training.ts` — optionalText; `apps/frontend/app/training/training-card.tsx:136`, `apps/frontend/app/training/[id]/booking-sidebar.tsx:79`, `apps/frontend/app/training/[id]/page.tsx:56`.
 - Воспроизведение: создать или обновить тренировку через API с `location: ""` либо строкой из пробелов. Общая схема принимает значение и обрезает пробелы до пустой строки. Backend сохраняет его. UI использует `??`, который не заменяет пустую строку, и показывает пустое поле.
