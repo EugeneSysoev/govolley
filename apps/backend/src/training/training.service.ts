@@ -45,7 +45,11 @@ export class TrainingService {
     if (!training) throw new NotFoundException('Тренировка не найдена');
     return this.response(training, userId);
   }
-  async update(id: number, dto: UpdateTrainingDto): Promise<Training> {
+  async update(
+    id: number,
+    dto: UpdateTrainingDto,
+    userId?: number,
+  ): Promise<Training> {
     return this.prisma.$transaction(async (tx) => {
       const current = await this.lockTraining(tx, id);
       if (
@@ -68,12 +72,12 @@ export class TrainingService {
         },
         include,
       });
-      return this.response(training);
+      return this.response(training, userId);
     });
   }
-  async remove(id: number): Promise<Training> {
+  async remove(id: number, userId?: number): Promise<Training> {
     // Existing bookings remain visible and cancellable after soft deletion.
-    return this.update(id, { isActive: false });
+    return this.update(id, { isActive: false }, userId);
   }
   async createBooking(userId: number, trainingId: number): Promise<Training> {
     return this.prisma.$transaction(async (tx) => {

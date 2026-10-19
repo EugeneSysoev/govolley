@@ -23,22 +23,25 @@ export const UpdateTrainingSchema = fields.partial().extend({ isActive: z.boolea
     { path: ['endTime'], message: 'Окончание должно быть позже начала' });
 export type CreateTrainingDto = z.infer<typeof CreateTrainingSchema>;
 export type UpdateTrainingDto = z.infer<typeof UpdateTrainingSchema>;
-/** JSON response. Counts include CONFIRMED bookings only; isBooked is viewer-specific. */
-export interface Training {
-  id: number;
-  title: string;
-  description: string | null;
-  date: string;
-  startTime: string;
-  endTime: string;
-  targetLevel: import('./enums.js').SkillLevel;
-  maxParticipants: number;
-  currentParticipants: number;
-  isBooked: boolean;
-  price: number | null;
-  coachName: string | null;
-  location: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+/** Saved JSON, independent of write-time limits and normalization.
+ * Counts include CONFIRMED bookings only; isBooked is viewer-specific.
+ */
+export const TrainingResponseSchema = z.object({
+  id: z.number().int().positive(),
+  title: z.string(),
+  description: z.string().nullable(),
+  date: z.iso.datetime({ offset: true }),
+  startTime: time,
+  endTime: time,
+  targetLevel: z.enum(['NOT_SET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  maxParticipants: z.number().int().nonnegative(),
+  currentParticipants: z.number().int().nonnegative(),
+  isBooked: z.boolean(),
+  price: z.number().finite().nullable(),
+  coachName: z.string().nullable(),
+  location: z.string().nullable(),
+  isActive: z.boolean(),
+  createdAt: z.iso.datetime({ offset: true }),
+  updatedAt: z.iso.datetime({ offset: true }),
+});
+export type Training = z.infer<typeof TrainingResponseSchema>;

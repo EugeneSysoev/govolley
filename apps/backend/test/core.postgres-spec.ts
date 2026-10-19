@@ -20,6 +20,7 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { AvatarStorage } from '../src/user/avatar-storage.service.js';
+import { TrainingResponseSchema } from '@govolley/shared-types';
 
 describe('PostgreSQL concurrency and protected HTTP operations', () => {
   let app: INestApplication<Server>;
@@ -233,6 +234,111 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
     await expect(
       training.update(t.id, { startTime: '10:00' }),
     ).rejects.toMatchObject({ status: 400 });
+  });
+  it.each(['COACH', 'ADMIN'] as const)(
+    'returns viewer-specific booking state on PATCH/DELETE for %s without exposing participants',
+    async (role) => {
+      const t = await event();
+      const booked = await user(role);
+      const unbooked = await user(role);
+      await request(server)
+        .post('/api/training/book')
+        .auth(token(booked.id), { type: 'bearer' })
+        .send({ trainingId: t.id })
+        .expect(201);
+      for (const method of ['patch', 'delete'] as const) {
+        for (const [viewer, isBooked] of [
+          [booked, true],
+          [unbooked, false],
+        ] as const) {
+          const result = await request(server)
+            [method](`/api/training/${t.id}`)
+            .auth(token(viewer.id), { type: 'bearer' })
+            .send(method === 'patch' ? { title: 'Staff update' } : {})
+            .expect(200);
+          const parsed = TrainingResponseSchema.parse(result.body);
+          expect(parsed).toMatchObject({ isBooked, currentParticipants: 1 });
+          expect(result.body).toEqual(parsed);
+          const read = await request(server)
+            .get(`/api/training/${t.id}`)
+            .auth(token(viewer.id), { type: 'bearer' })
+            .expect(200);
+          expect(TrainingResponseSchema.parse(read.body)).toEqual(parsed);
+        }
+      }
+      const publicRead = await request(server)
+        .get(`/api/training/${t.id}`)
+        .expect(200);
+      const publicTraining = TrainingResponseSchema.parse(publicRead.body);
+      expect(publicTraining).toMatchObject({
+        isBooked: false,
+        currentParticipants: 1,
+        isActive: false,
+      });
+      expect(publicRead.body).toEqual(publicTraining);
+      const bookings = await request(server)
+        .get('/api/users/bookings')
+        .auth(token(booked.id), { type: 'bearer' })
+        .expect(200);
+      const savedBookings = z
+        .array(
+          z.object({
+            status: z.string(),
+            training: z.object({ id: z.number(), isActive: z.boolean() }),
+          }),
+        )
+        .parse(bookings.body);
+      expect(savedBookings).toContainEqual({
+        status: 'CONFIRMED',
+        training: { id: t.id, isActive: false },
+      });
+      const cancelled = await request(server)
+        .post('/api/training/unbook')
+        .auth(token(booked.id), { type: 'bearer' })
+        .send({ trainingId: t.id })
+        .expect(201);
+      expect(TrainingResponseSchema.parse(cancelled.body)).toMatchObject({
+        isBooked: false,
+        currentParticipants: 0,
+      });
+    },
+  );
+  it('keeps omitted PATCH fields and explicitly clears nullable values over HTTP', async () => {
+    const t = await event();
+    const manager = await user('COACH');
+    const endpoint = `/api/training/${t.id}`;
+    await request(server)
+      .patch(endpoint)
+      .auth(token(manager.id), { type: 'bearer' })
+      .send({
+        location: 'Beach',
+        coachName: 'Coach',
+        description: 'Saved',
+        price: 500,
+      })
+      .expect(200);
+    const omitted = await request(server)
+      .patch(endpoint)
+      .auth(token(manager.id), { type: 'bearer' })
+      .send({ title: 'Renamed' })
+      .expect(200);
+    expect(TrainingResponseSchema.parse(omitted.body)).toMatchObject({
+      location: 'Beach',
+      coachName: 'Coach',
+      description: 'Saved',
+      price: 500,
+    });
+    const cleared = await request(server)
+      .patch(endpoint)
+      .auth(token(manager.id), { type: 'bearer' })
+      .send({ location: null, coachName: null, description: null, price: null })
+      .expect(200);
+    expect(TrainingResponseSchema.parse(cleared.body)).toMatchObject({
+      location: null,
+      coachName: null,
+      description: null,
+      price: null,
+    });
   });
   it.each(['post', 'patch', 'delete'] as const)(
     'enforces 401/403/allowed role on %s',
