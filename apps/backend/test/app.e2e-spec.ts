@@ -1,29 +1,39 @@
 import { Test } from '@nestjs/testing';
-import type { TestingModule } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from './../src/app.module.js';
-
-describe('AppController (e2e)', () => {
-  let app: INestApplication;
-
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+import type { Server } from 'node:http';
+import { AuthController } from '../src/auth/auth.controller.js';
+import { AuthSessionService } from '../src/auth/auth-session.service.js';
+describe('auth HTTP smoke (external dependencies replaced)', () => {
+  let app: INestApplication<Server>;
+  const sessions = {
+    create: jest.fn().mockResolvedValue({ sessionId: 'fixture' }),
+    status: jest.fn().mockResolvedValue({ status: 'pending' }),
+    exchange: jest.fn(),
+  };
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [{ provide: AuthSessionService, useValue: sessions }],
     }).compile();
-
-    app = moduleFixture.createNestApplication();
+    app = module.createNestApplication();
+    app.setGlobalPrefix('api');
     await app.init();
   });
-
-  it('/ (GET)', () => {
-    return request(app.getHttpServer() as unknown as string)
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
-  });
-
   afterAll(async () => {
     await app.close();
+  });
+  it('initializes the current auth protocol', async () => {
+    await request(app.getHttpServer())
+      .post('/api/bot-auth/init-session')
+      .expect(201)
+      .expect({ sessionId: 'fixture' });
+  });
+  it('rejects malformed session IDs before reaching the service', async () => {
+    await request(app.getHttpServer())
+      .post('/api/bot-auth/verify-confirmed-session')
+      .send({ sessionId: '../../invalid' })
+      .expect(400);
+    expect(sessions.exchange).not.toHaveBeenCalled();
   });
 });

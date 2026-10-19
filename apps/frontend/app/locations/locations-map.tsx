@@ -1,18 +1,17 @@
 "use client";
 
-// Импорты хуков и SDK для карты
 import { useRef, useEffect, useCallback } from "react";
 import * as maptilersdk from "@maptiler/sdk";
 import "@maptiler/sdk/dist/maptiler-sdk.css";
 import { LOCATIONS } from "./constants";
 
-// Интерфейс пропсов для LocationCard
+// Интерфейс пропсов карточки локации
 interface LocationCardProps {
   loc: (typeof LOCATIONS)[0];
   onFlyTo: (lng: number, lat: number) => void;
 }
 
-// Компонент карточки локации
+// Карточка локации с навигацией на карте
 const LocationCard = ({ loc, onFlyTo }: LocationCardProps) => (
   <div
     onClick={() => onFlyTo(loc.lng, loc.lat)}
@@ -45,13 +44,12 @@ const LocationCard = ({ loc, onFlyTo }: LocationCardProps) => (
   </div>
 );
 
-// Основной компонент карты с локациями
+// Карта с локациями и панелью навигации
 export const LocationMap = () => {
-  // Рефы для контейнера и экземпляра карты
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maptilersdk.Map | null>(null);
 
-  // Функция перемещения карты к координатам
+  // Перемещение карты к координатам
   const handleFlyTo = useCallback((lng: number, lat: number) => {
     map.current?.flyTo({
       center: [lng, lat],
@@ -60,12 +58,12 @@ export const LocationMap = () => {
     });
   }, []);
 
-  // Инициализация карты при монтировании
+  // Инициализация карты и маркеров
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
     if (!apiKey) {
-      console.warn("Maptiler Key not found in process.env");
+      console.warn("MapTiler Key not found in environment variables.");
       return;
     }
 
@@ -73,15 +71,16 @@ export const LocationMap = () => {
 
     if (!mapContainer.current || map.current) return;
 
-    // Создание экземпляра карты
     map.current = new maptilersdk.Map({
       container: mapContainer.current,
-      style: `https://api.maptiler.com/maps/streets-v4/style.json?key=${apiKey}`,
+      style: maptilersdk.MapStyle.STREETS,
+      // Avoid rendering third-party attribution HTML with the affected MapLibre sanitizer.
+      attributionControl: false,
       center: [98.3, 7.81],
       zoom: 11,
     });
 
-    // Добавление маркеров после загрузки
+    // Добавление маркеров при загрузке карты
     map.current.on("load", () => {
       LOCATIONS.forEach((loc) => {
         const marker = new maptilersdk.Marker({ color: "#BEFF00" })
@@ -95,7 +94,7 @@ export const LocationMap = () => {
       });
     });
 
-    // Очистка при размонтировании
+    // Очистка ресурсов при размонтировании
     return () => {
       map.current?.remove();
       map.current = null;
@@ -104,12 +103,17 @@ export const LocationMap = () => {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 w-full max-w-7xl mx-auto p-4 bg-brand-white/5 backdrop-blur-md border border-white/10 rounded-[48px]">
-      {/* Контейнер карты */}
+      {/* Область карты */}
       <div className="relative grow h-100 lg:h-110 rounded-[40px] overflow-hidden border border-white/5 shadow-2xl">
         <div ref={mapContainer} className="w-full h-full" />
+        <div className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-1 text-xs text-white">
+          <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener noreferrer">© MapTiler</a>
+          {" · "}
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+        </div>
       </div>
 
-      {/* Список карточек локаций */}
+      {/* Панель локаций */}
       <div className="flex flex-col gap-2 lg:w-137.5 w-full shrink-0">
         {LOCATIONS.map((loc) => (
           <LocationCard key={loc.id} loc={loc} onFlyTo={handleFlyTo} />

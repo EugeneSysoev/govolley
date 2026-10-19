@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { QUESTIONS } from "./constants";
 
-// URL бэкенда
-const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:3000/api";
+import { api } from '@/lib/api';
+import { profileSchema } from '@/lib/contracts';
 
 export default function OnboardingPage() {
   // Сессия пользователя
@@ -21,23 +21,12 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  // Расчет общего балла
-  const totalScore = answers.reduce<number>((sum, val) => sum + (val ?? 0), 0);
-
-  // Обработка выбора ответа
   const handleAnswer = (score: number) => {
-    const newAnswers = [...answers];
-    newAnswers[currentStep] = score;
-    const trimmedAnswers = newAnswers.slice(0, currentStep + 1);
-    setAnswers(trimmedAnswers);
-
-    if (currentStep < QUESTIONS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // Финальный балл с коррекцией
-      const finalScore = totalScore + score - (answers[currentStep] ?? 0);
-      finishTest(finalScore);
-    }
+    const nextAnswers = [...answers];
+    nextAnswers[currentStep] = score;
+    setAnswers(nextAnswers);
+    if (currentStep < QUESTIONS.length - 1) setCurrentStep(currentStep + 1);
+    else if (nextAnswers.every((answer): answer is number => answer !== null)) void finishTest(nextAnswers);
   };
 
   // Возврат к предыдущему шагу
@@ -48,49 +37,18 @@ export default function OnboardingPage() {
   };
 
   // Завершение теста и отправка на бэкенд
-  const finishTest = async (finalScore: number) => {
-    const token = (session as any)?.accessToken;
-    if (!token) {
-      alert(
-        "Ошибка: Токен не найден. Попробуйте обновить страницу или войти заново.",
-      );
-      return;
-    }
-
+  const finishTest = async (finalAnswers: number[]) => {
+    if (!session?.accessToken) { alert('Войдите заново'); return; }
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/users/complete-onboarding`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "69420",
-        },
-        body: JSON.stringify({ totalScore: finalScore }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            skillLevel: data.skillLevel,
-          },
-        });
-        router.push("/profile");
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        alert(
-          `Ошибка: ${errorData.message || "Не удалось сохранить результат"}`,
-        );
-      }
+      await api('/users/complete-onboarding', profileSchema, {
+        method: 'PATCH', body: JSON.stringify({ answers: finalAnswers }),
+      }, session.accessToken);
+      await update();
+      router.push('/profile');
     } catch (error) {
-      console.error("Ошибка отправки:", error);
-      alert("Не удалось связаться с сервером бэкенда.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      alert(error instanceof Error ? error.message : 'Не удалось сохранить результат');
+    } finally { setIsSubmitting(false); }
   };
 
   // Текущий вопрос

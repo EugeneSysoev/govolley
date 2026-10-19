@@ -65,7 +65,7 @@ async function bootstrap() {
   logger.log(`🚀 Backend: http://localhost:${port}/api`);
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Ошибка запуска:', error);
+bootstrap().catch(() => {
+  console.error('Backend startup failed');
   process.exit(1);
 });

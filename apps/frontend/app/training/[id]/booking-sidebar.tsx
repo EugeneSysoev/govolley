@@ -1,176 +1,42 @@
 "use client";
-
-import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
-import { MagneticButton } from "@/components/magnetic-button";
-import { Training } from "../types";
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:3000/api";
-
-const CLAMP_LABEL = "text-[clamp(0.65rem,1.5vw,0.7rem)]";
-const CLAMP_VALUE = "text-[clamp(0.85rem,2vw,0.95rem)]";
-
-const LEVEL_LABELS: Record<string, string> = {
-  NOT_SET: "Не указан",
-  BEGINNER: "Новичок",
-  INTERMEDIATE: "Средний",
-  ADVANCED: "Продвинутый",
-};
-
-interface ExtendedTraining extends Training {
-  isBooked: boolean;
-  currentParticipants: number;
-}
-
-export function BookingSidebar({
-  training: initialTraining,
-}: {
-  training: ExtendedTraining;
-}) {
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { motion } from 'framer-motion';
+import { MagneticButton } from '@/components/magnetic-button';
+import type { Training } from '../types';
+import { trainingApi } from '../api';
+const CLAMP_LABEL = 'text-[clamp(0.65rem,1.5vw,0.7rem)]';
+const CLAMP_VALUE = 'text-[clamp(0.85rem,2vw,0.95rem)]';
+const LEVEL_LABELS: Record<string,string> = { NOT_SET: 'Не указан', BEGINNER: 'Новичок', INTERMEDIATE: 'Средний', ADVANCED: 'Продвинутый' };
+export function BookingSidebar({ training: initialTraining }: { training: Training }) {
   const { data: session } = useSession();
-  const accessToken = (session as any)?.accessToken;
-
-  const [training, setTraining] = useState<ExtendedTraining>(initialTraining);
-
+  const accessToken = session?.accessToken;
+  const [training, setTraining] = useState(initialTraining);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
   const isBookedByUser = training.isBooked;
   const isFull = training.currentParticipants >= training.maxParticipants;
-
-  const progress =
-    (training.currentParticipants / training.maxParticipants) * 100;
-
-  const formattedDate = new Date(training.date).toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-
-  const levelLabel = LEVEL_LABELS[training.targetLevel] || training.targetLevel;
-
-  // единый метод обновления
-  const updateTraining = (data: ExtendedTraining) => {
-    setTraining(data);
-  };
-
-  // SYNC С СЕРВЕРОМ
-  const fetchTraining = useCallback(async () => {
-    if (!training.id) return;
-
+  const progress = Math.min(100, training.currentParticipants / training.maxParticipants * 100);
+  const formattedDate = new Date(training.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const levelLabel = LEVEL_LABELS[training.targetLevel];
+  useEffect(() => {
+    const controller = new AbortController();
     setIsFetching(true);
-
-    try {
-      const res = await fetch(`${BACKEND_URL}/training/${training.id}`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      });
-
-      if (!res.ok) return;
-
-      const data = await res.json();
-      updateTraining(data);
-    } catch (e) {
-      console.error("Ошибка синхронизации тренировки", e);
-    } finally {
-      setIsFetching(false);
-    }
-  }, [training.id, accessToken]);
-
-  // при заходе
-  useEffect(() => {
-    fetchTraining();
-  }, [fetchTraining]);
-
-  // при логине / смене токена
-  useEffect(() => {
-    if (accessToken) {
-      fetchTraining();
-    }
-  }, [accessToken, fetchTraining]);
-
-  // -------------------------
-  // BOOK
-  // -------------------------
-  const handleBooking = async () => {
-    if (!accessToken) {
-      alert("Необходимо авторизоваться");
-      return;
-    }
-
-    if (isFull) {
-      alert("Нет свободных мест");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/training/book`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          trainingId: training.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Ошибка бронирования");
-      }
-
-      const updatedTraining = await response.json();
-
-      updateTraining(updatedTraining);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+    void trainingApi.get(initialTraining.id, accessToken, controller.signal)
+      .then(setTraining).catch(() => { if (!controller.signal.aborted) setError('Не удалось обновить тренировку'); })
+      .finally(() => { if (!controller.signal.aborted) setIsFetching(false); });
+    return () => controller.abort();
+  }, [initialTraining.id, accessToken]);
+  const changeBooking = async (cancel: boolean) => {
+    if (!accessToken) { setError('Необходимо авторизоваться'); return; }
+    setIsLoading(true); setError(null);
+    try { setTraining(await (cancel ? trainingApi.unbook(training.id, accessToken) : trainingApi.book(training.id, accessToken))); }
+    catch (error) { setError(error instanceof Error ? error.message : 'Не удалось изменить запись'); }
+    finally { setIsLoading(false); }
   };
-
-  // -------------------------
-  // CANCEL
-  // -------------------------
-  const handleCancel = async () => {
-    if (!accessToken) {
-      alert("Необходимо авторизоваться");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/training/unbook`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          trainingId: training.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Ошибка отмены");
-      }
-
-      const updatedTraining = await response.json();
-
-      updateTraining(updatedTraining);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  const handleBooking = () => changeBooking(false);
+  const handleCancel = () => changeBooking(true);
   const InfoBlock = ({
     label,
     value,
@@ -210,7 +76,7 @@ export function BookingSidebar({
           isAccent
         />
         <InfoBlock label="Уровень" value={levelLabel} />
-        <InfoBlock label="Локация" value={training.location} />
+        <InfoBlock label="Локация" value={training.location ?? "Уточняется"} />
         <InfoBlock
           label="Места"
           value={`${training.currentParticipants} / ${training.maxParticipants}`}
@@ -230,12 +96,13 @@ export function BookingSidebar({
         </div>
       </div>
 
+      {error && <p role="alert" className="text-red-400 mb-4">{error}</p>}
       <div className="flex justify-center w-full">
         <div className="w-55">
           <MagneticButton>
             <button
               onClick={isBookedByUser ? handleCancel : handleBooking}
-              disabled={isLoading || (!isBookedByUser && isFull)}
+              disabled={isLoading || (!isBookedByUser && (isFull || !training.isActive))}
               className={`
                 btn-nav-premium w-full h-13.5 relative
                 flex items-center justify-center
@@ -254,6 +121,8 @@ export function BookingSidebar({
                   ? "Обработка..."
                   : isBookedByUser
                     ? "Отменить запись"
+                    : !training.isActive
+                      ? "Тренировка отменена"
                     : isFull
                       ? "Мест нет"
                       : "Подтвердить"}

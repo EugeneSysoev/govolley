@@ -29,11 +29,11 @@ export function TrainingLocationView({
     >
       {/* Фоновое изображение */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={image || "/photos/default-court.jpg"}
+        {image && <img
+          src={image}
           alt={name}
           className="w-full h-full object-cover transition-all duration-1000 scale-110 group-hover:scale-100 opacity-60"
-        />
+        />}
         <div className="absolute inset-0 bg-linear-to-t from-black via-black/30 to-transparent opacity-90" />
       </div>
 

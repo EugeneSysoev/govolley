@@ -8,81 +8,76 @@ import {
   Delete,
   UseGuards,
   Req,
-  ParseIntPipe,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { z } from 'zod';
 import { TrainingService } from './training.service.js';
-import type {
-  CreateTrainingDto,
-  UpdateTrainingDto,
+import {
+  CreateTrainingSchema,
+  UpdateTrainingSchema,
 } from '../common/validators/training.schema.js';
+import { validate } from '../common/utils/validate.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard.js';
-
-/** Тип пользователя из JWT токена */
-type JwtUser = {
-  id: string;
-  role?: string;
-};
-
-/** Извлечение ID пользователя из запроса */
-function getUserId(req: Request): number | undefined {
-  const user = req.user as JwtUser | undefined;
-  return user ? Number(user.id) : undefined;
+import { TrainingManagerGuard } from '../auth/guards/training-manager.guard.js';
+const idSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(Number.MAX_SAFE_INTEGER);
+const bookingSchema = z.strictObject({
+  trainingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+});
+function userId(req: Request): number {
+  if (!req.user) throw new UnauthorizedException();
+  return req.user.id;
 }
-
 @Controller('training')
 export class TrainingController {
   constructor(private readonly trainingService: TrainingService) {}
-
-  /** Создание тренировки */
   @Post()
-  create(@Body() dto: CreateTrainingDto) {
-    return this.trainingService.create(dto);
+  @UseGuards(JwtAuthGuard, TrainingManagerGuard)
+  create(@Body() body: unknown) {
+    return this.trainingService.create(validate(CreateTrainingSchema, body));
   }
-
-  /** Получение всех тренировок (опциональная авторизация) */
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
   findAll(@Req() req: Request) {
-    return this.trainingService.findAll(getUserId(req));
+    return this.trainingService.findAll(req.user?.id);
   }
-
-  /** Получение одной тренировки (опциональная авторизация) */
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
-    return this.trainingService.findOne(id, getUserId(req));
+  findOne(@Param('id') id: string, @Req() req: Request) {
+    return this.trainingService.findOne(validate(idSchema, id), req.user?.id);
   }
-
-  /** Обновление тренировки */
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateTrainingDto,
-  ) {
-    return this.trainingService.update(id, dto);
+  @UseGuards(JwtAuthGuard, TrainingManagerGuard)
+  update(@Param('id') id: string, @Body() body: unknown) {
+    return this.trainingService.update(
+      validate(idSchema, id),
+      validate(UpdateTrainingSchema, body),
+    );
   }
-
-  /** Удаление тренировки (мягкое удаление) */
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.trainingService.remove(id);
+  @UseGuards(JwtAuthGuard, TrainingManagerGuard)
+  remove(@Param('id') id: string) {
+    return this.trainingService.remove(validate(idSchema, id));
   }
-
-  /** Бронирование тренировки (требуется авторизация) */
   @Post('book')
   @UseGuards(JwtAuthGuard)
-  createBooking(@Req() req: Request, @Body() body: { trainingId: number }) {
-    const userId = getUserId(req);
-    return this.trainingService.createBooking(userId!, body.trainingId);
+  createBooking(@Req() req: Request, @Body() body: unknown) {
+    return this.trainingService.createBooking(
+      userId(req),
+      validate(bookingSchema, body).trainingId,
+    );
   }
-
-  /** Отмена бронирования (требуется авторизация) */
   @Post('unbook')
   @UseGuards(JwtAuthGuard)
-  cancelBooking(@Req() req: Request, @Body() body: { trainingId: number }) {
-    const userId = getUserId(req);
-    return this.trainingService.cancelBooking(userId!, body.trainingId);
+  cancelBooking(@Req() req: Request, @Body() body: unknown) {
+    return this.trainingService.cancelBooking(
+      userId(req),
+      validate(bookingSchema, body).trainingId,
+    );
   }
 }

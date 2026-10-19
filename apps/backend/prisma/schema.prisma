@@ -25,6 +25,7 @@ model User {
   username        String?       @unique // Тег в Telegram (@username)
   firstName       String?       
   lastName        String?
+  avatarKey       String?
   image           String?
   
   role            Role          @default(USER)
@@ -77,7 +78,7 @@ model Booking {
 model AuthSession {
   id         String   @id @default(uuid())
   telegramId String? 
-  status     String   @default("PENDING") // PENDING, CONFIRMED, EXPIRED
+  status     String   @default("PENDING") // PENDING, CONFIRMED, CONSUMED; all expire after the shared TTL
   
   userId     Int?
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)

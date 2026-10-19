@@ -4,7 +4,8 @@ import TelegramLogin from "@/components/auth/telegram-login";
 import { signOut, useSession } from "next-auth/react";
 
 export default function SignInPage() {
-  const { data: session, status } = useSession();
+  const { data: currentSession, status } = useSession();
+  const session = currentSession?.error ? null : currentSession;
 
   if (status === "loading") {
     return (
@@ -46,7 +47,7 @@ export default function SignInPage() {
                 {session.user?.name}
               </p>
               <p className="text-[10px] text-brand-lime uppercase tracking-[0.3em] mt-2 font-black opacity-80">
-                {(session.user as any)?.role || "Игрок"}
+                {session.user?.role || "Игрок"}
               </p>
             </div>
             <button

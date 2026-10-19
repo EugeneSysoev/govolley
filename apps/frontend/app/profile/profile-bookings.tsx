@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Calendar, Clock, MapPin } from "lucide-react";
@@ -75,7 +76,7 @@ export function ProfileBookings({
             >
               <div className="flex-1">
                 <h4 className="text-[clamp(1.2rem,2vw,1.8rem)] font-bold text-white mb-2 tracking-wide">
-                  {training?.title || "Без названия"}
+                  <Link href={`/training/${training.id}`}>{training.title || "Без названия"}</Link>
                 </h4>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[clamp(0.7rem,1.5vw,0.8rem)] font-mono uppercase tracking-widest text-white/40">
                   <div className="flex items-center gap-1">
@@ -97,6 +98,7 @@ export function ProfileBookings({
                 </div>
               </div>
 
+              <Link href={`/training/${training.id}`} className="text-brand-lime text-xs">Детали и отмена записи →</Link>
               <div
                 className={`shrink-0 px-4 py-2 rounded-full border text-[0.65rem] uppercase font-black tracking-[0.2em] transition-colors ${
                   isConfirmed

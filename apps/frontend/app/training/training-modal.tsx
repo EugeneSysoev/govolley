@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Training } from "./types";
+import type { Training, CreateTrainingDto } from "./types";
+import { CreateTrainingSchema } from "@govolley/shared-types";
+import { useSession } from "next-auth/react";
 import { trainingApi } from "./api";
 
 interface TrainingModalProps {
@@ -15,9 +17,9 @@ interface TrainingModalProps {
 
 interface FormFieldProps {
   label: string;
-  field: keyof Training;
-  value: any;
-  onChange: (field: keyof Training, value: any) => void;
+  field: keyof CreateTrainingDto;
+  value: string | number | null | undefined;
+  onChange: (field: keyof CreateTrainingDto, value: string | number) => void;
   required?: boolean;
 }
 
@@ -57,7 +59,7 @@ const FormInput = ({
             ? "cursor-pointer scheme-dark [&::-webkit-calendar-picker-indicator]:filter-none [&::-webkit-calendar-picker-indicator]:invert"
             : ""
         }`}
-        value={value || ""}
+        value={value ?? ""}
         onChange={(e) =>
           onChange(
             field,
@@ -83,7 +85,7 @@ const FormSelect = ({
       <select
         required={required}
         className={FIELD_CLASSES}
-        value={value || ""}
+        value={value ?? ""}
         onChange={(e) => onChange(field, e.target.value)}
       >
         {options.map((opt) => (
@@ -106,7 +108,8 @@ export function TrainingModal({
   initialData,
   selectedDate,
 }: TrainingModalProps) {
-  const [formData, setFormData] = useState<Partial<Training>>({});
+  const { data: session } = useSession();
+  const [formData, setFormData] = useState<Partial<CreateTrainingDto>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -115,7 +118,7 @@ export function TrainingModal({
           title: "",
           location: LOCATIONS[0],
           coachName: "Евгений Сысоев",
-          targetLevel: GROUP_LEVELS[0], // "NOT_SET"
+          targetLevel: "NOT_SET",
           startTime: "07:00",
           endTime: "09:00",
           maxParticipants: 10,
@@ -125,16 +128,23 @@ export function TrainingModal({
     }
   }, [isOpen, initialData, selectedDate]);
 
-  const handleChange = (field: keyof Training, value: string | number) => {
+  const handleChange = (field: keyof CreateTrainingDto, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const data = CreateTrainingSchema.parse({
+        title: formData.title, description: formData.description,
+        location: formData.location || null, coachName: formData.coachName || null,
+        price: formData.price ?? null, targetLevel: formData.targetLevel,
+        date: formData.date, startTime: formData.startTime, endTime: formData.endTime,
+        maxParticipants: formData.maxParticipants,
+      });
       const action = initialData?.id
-        ? trainingApi.update(Number(initialData.id), formData)
-        : trainingApi.create({ ...formData, date: selectedDate.toISOString() });
+        ? trainingApi.update(initialData.id, data, session?.accessToken)
+        : trainingApi.create(data, session?.accessToken);
 
       await action;
       onSave();

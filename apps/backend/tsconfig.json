@@ -3,12 +3,13 @@
     "target": "ES2022",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": ["node", "jest", "bun"],
+    "types": [
+      "node",
+      "jest",
+      "bun"
+    ],
     "rootDir": ".",
     "outDir": "./dist",
-    "paths": {
-      "@govolley/shared-types": ["../../packages/shared-types/src/index.ts"]
-    },
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
@@ -21,6 +22,14 @@
     "strict": true,
     "noImplicitAny": true
   },
-  "include": ["src/**/*", "test/**/*", "prisma.config.ts", "**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "prisma.config.ts",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

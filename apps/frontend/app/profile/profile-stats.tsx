@@ -1,4 +1,5 @@
 "use client";
+import type { ProfileUser } from "./profile-types";
 
 const skillLevelLabels: Record<string, string> = {
   NOT_SET: "Не указан",
@@ -8,11 +9,8 @@ const skillLevelLabels: Record<string, string> = {
 };
 
 interface ProfileStatsProps {
-  user: any;
+  user?: ProfileUser;
   userRole: string;
-  isEditing: boolean;
-  formData: any; // не используется, но оставлено для совместимости
-  setFormData: (data: any) => void; // не используется
   onVerify: () => void;
   isVerifying: boolean;
 }
@@ -43,7 +41,7 @@ export function ProfileStats({
 
         {/* Всегда показываем уровень без возможности редактирования */}
         <span className="truncate font-bold uppercase drop-shadow-md/50 tracking-wider text-[clamp(1rem,2vw,1.2rem)] text-white">
-          {skillLevelLabels[user?.skillLevel] || "—"}
+          {skillLevelLabels[user?.skillLevel ?? "NOT_SET"] || "—"}
         </span>
 
         {(userRole === "COACH" || userRole === "ADMIN") &&

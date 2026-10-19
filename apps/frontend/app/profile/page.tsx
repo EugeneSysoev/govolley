@@ -14,15 +14,16 @@ import { ProfileBookings } from "./profile-bookings";
 import { PhotoModal } from "./photo-modal";
 import { Booking, ProfileFormData } from "./profile-types";
 
-// URL бэкенда
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:3000/api";
+import { api } from '@/lib/api';
+import { profileSchema, bookingsSchema } from '@/lib/contracts';
+import type { Profile } from '@/lib/contracts';
 
 export default function ProfilePage() {
   // Получение сессии пользователя
   const { data: session, update, status } = useSession();
-  const user = session?.user as any;
-  const accessToken = (session as any)?.accessToken;
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const user = profile ?? session?.user;
+  const accessToken = session?.accessToken;
 
   // Состояния для редактирования профиля
   const [isEditing, setIsEditing] = useState(false);
@@ -40,7 +41,6 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState<ProfileFormData>({
     firstName: "",
     lastName: "",
-    skillLevel: "NOT_SET",
   });
 
   // Список бронирований
@@ -53,25 +53,28 @@ export default function ProfilePage() {
       setFormData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        skillLevel: user.skillLevel || "NOT_SET",
       });
       setAvatarPreview(user.image || null);
     }
   }, [user]);
 
-  // Загрузка бронирований пользователя
   useEffect(() => {
-    if (!user || !accessToken) return;
-    fetch(`${BACKEND_URL}/users/bookings`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const normalized = Array.isArray(data) ? data : data?.bookings || [];
-        setBookings([...normalized]);
-      })
-      .catch(() => setBookings([]));
-  }, [user, accessToken]);
+    if (!accessToken) return;
+    const controller = new AbortController();
+    const refresh = () => {
+      void Promise.all([
+        api('/users/profile', profileSchema, { signal: controller.signal }, accessToken),
+        api('/users/bookings', bookingsSchema, { signal: controller.signal }, accessToken),
+      ]).then(([data, list]) => { setProfile(data); setBookings(list); })
+        .catch(() => { if (!controller.signal.aborted) setError('Не удалось загрузить профиль'); });
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    return () => { controller.abort(); window.removeEventListener('focus', refresh); };
+  }, [accessToken]);
+  useEffect(() => {
+    return () => { if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview); };
+  }, [avatarPreview]);
 
   // Сохранение профиля
   const handleSave = async () => {
@@ -82,21 +85,14 @@ export default function ProfilePage() {
       if (avatarFile) payload.append("image", avatarFile);
       payload.append("firstName", formData.firstName);
       payload.append("lastName", formData.lastName);
-      payload.append("skillLevel", formData.skillLevel);
 
-      const response = await fetch(`${BACKEND_URL}/users/profile`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: payload,
-      });
-
-      if (!response.ok) throw new Error("Ошибка сохранения");
-      const updatedUser = await response.json();
-
-      await update({ user: { ...session?.user, ...updatedUser } });
+      const updatedUser = await api('/users/profile', profileSchema, { method: 'PATCH', body: payload }, accessToken);
+      setProfile(updatedUser);
+      setAvatarFile(null);
+      await update();
       setIsEditing(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка запроса");
     } finally {
       setIsSaving(false);
     }
@@ -107,24 +103,13 @@ export default function ProfilePage() {
     if (!accessToken || !user?.id) return;
     setIsVerifying(true);
     try {
-      const response = await fetch(
-        `${BACKEND_URL}/users/verify-level/${user.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ isLevelVerified: true }),
-        },
-      );
-
-      if (!response.ok) throw new Error("Ошибка подтверждения уровня");
-
-      // Обновляем сессию, чтобы isLevelVerified стал true
-      await update({ user: { ...session?.user, isLevelVerified: true } });
-    } catch (err: any) {
-      setError(err.message);
+      const updated = await api(`/users/verify-level/${user.id}`, profileSchema, {
+        method: 'PATCH', body: JSON.stringify({ isLevelVerified: true }),
+      }, accessToken);
+      setProfile(updated);
+      await update();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка запроса");
     } finally {
       setIsVerifying(false);
     }
@@ -180,7 +165,6 @@ export default function ProfilePage() {
           >
             <ProfileHeader
               user={user}
-              accessToken={accessToken}
               isEditing={isEditing}
               formData={formData}
               setFormData={setFormData}
@@ -198,10 +182,7 @@ export default function ProfilePage() {
 
             <ProfileStats
               user={user}
-              userRole={user?.role}
-              isEditing={isEditing}
-              formData={formData}
-              setFormData={setFormData}
+              userRole={user?.role ?? "USER"}
               onVerify={handleVerifyLevel}
               isVerifying={isVerifying}
             />

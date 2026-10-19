@@ -1,33 +1,11 @@
-import NextAuth, { DefaultSession } from "next-auth";
-import { JWT as DefaultJWT } from "next-auth/jwt";
-import { Role, SkillLevel } from "shared-types";
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: number;
-      role: Role;
-      skillLevel: SkillLevel;
-      balance: number;
-      isLevelVerified: boolean;
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    id: number;
-    role: Role;
-    skillLevel: SkillLevel;
-    balance: number;
-    isLevelVerified: boolean;
-  }
+import type { DefaultSession } from 'next-auth';
+import type { Profile } from '@/lib/contracts';
+type AuthUser = Omit<Profile, 'id'> & { id: string; accessToken: string };
+declare module 'next-auth' {
+  interface Session { user: Omit<AuthUser, 'accessToken'> & DefaultSession['user']; accessToken?: string; error?: 'SessionExpired' }
+  interface User extends Omit<AuthUser, "image"> { image?: string | null }
 }
-
-declare module "next-auth/jwt" {
-  interface JWT extends DefaultJWT {
-    id: number;
-    role: Role;
-    skillLevel: SkillLevel;
-    balance: number;
-    isLevelVerified: boolean;
-  }
+declare module 'next-auth/jwt' {
+  interface JWT { profile?: Omit<AuthUser, 'accessToken'>; accessToken?: string; profileCheckedAt?: number }
 }
+export {};

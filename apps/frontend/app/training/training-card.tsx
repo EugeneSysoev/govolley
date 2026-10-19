@@ -133,7 +133,7 @@ export function TrainingCard({
           isAccent
         />
         <InfoBlock label="Уровень" value={levelLabel} />
-        <InfoBlock label="Локация" value={t.location} />
+        <InfoBlock label="Локация" value={t.location ?? "Уточняется"} />
         <InfoBlock
           label="Места"
           value={`${t.currentParticipants} / ${t.maxParticipants}`}

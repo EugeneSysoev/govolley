@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { motion, Variants } from "framer-motion";
+import { motion, Variants, SVGMotionProps } from "framer-motion";
 import Link from "next/link";
 
 const sidebarVariants: Variants = {
@@ -94,7 +94,7 @@ export const MobileMenu = ({
   );
 };
 
-const Path = (props: any) => (
+const Path = (props: SVGMotionProps<SVGPathElement>) => (
   <motion.path
     fill="transparent"
     strokeWidth="3"

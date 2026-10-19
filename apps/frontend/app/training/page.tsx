@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -13,7 +13,7 @@ import { Training } from "./types";
 
 export default function TrainingPage() {
   const { data: session, status } = useSession();
-  const userRole = session?.user?.role as string | undefined;
+  const userRole = session?.user?.role;
 
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -37,19 +37,19 @@ export default function TrainingPage() {
   }, [selectedDate]);
 
   // Функция загрузки тренировок (была удалена – восстанавливаем)
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     try {
-      const data = await trainingApi.getAll();
+      const data = await trainingApi.getAll(session?.accessToken);
       setTrainings(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to refresh data:", err);
       setTrainings([]);
     }
-  };
+  }, [session?.accessToken]);
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    void refreshData();
+  }, [refreshData]);
 
   // Фильтрация тренировок по выбранной дате
   const filteredTrainings = useMemo(() => {
@@ -68,9 +68,9 @@ export default function TrainingPage() {
   const handleDelete = async (id: number) => {
     if (confirm("Удалить эту тренировку?")) {
       try {
-        await trainingApi.delete(id);
+        await trainingApi.delete(id, session?.accessToken);
         await refreshData();
-      } catch (err) {
+      } catch {
         alert("Ошибка при удалении");
       }
     }
