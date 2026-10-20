@@ -5,7 +5,16 @@ import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 
 // Real NextAuth + Nest + PostgreSQL. Telegram confirmation is replaced by a fixture.
-// Build with BACKEND_URL=http://127.0.0.1:55440 before running.
+// Build with BACKEND_URL matching TEST_BACKEND_PORT before running.
+function port(name, fallback) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value < 1024 || value > 65535) throw new Error(`Invalid ${name}`);
+  return value;
+}
+const backendPort = port('TEST_BACKEND_PORT', 55440);
+const frontendPort = port('TEST_FRONTEND_PORT', 55441);
+if (backendPort === frontendPort) throw new Error('Test servers require separate ports');
+const backend = `http://127.0.0.1:${backendPort}`;
 const database = process.env.TEST_DATABASE_URL;
 const target = database && new URL(database);
 if (!target || !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) || !target.pathname.endsWith('_test')) {
@@ -23,22 +32,25 @@ const { chromium } = frontendRequire('@playwright/test');
 const { PrismaModule } = await import(new URL('apps/backend/dist/src/prisma/prisma.module.js', root));
 const { PrismaService } = await import(new URL('apps/backend/dist/src/prisma/prisma.service.js', root));
 const { AuthModule } = await import(new URL('apps/backend/dist/src/auth/auth.module.js', root));
+const { AuthSessionService } = await import(new URL('apps/backend/dist/src/auth/auth-session.service.js', root));
 const { UserModule } = await import(new URL('apps/backend/dist/src/user/user.module.js', root));
 const { TrainingModule } = await import(new URL('apps/backend/dist/src/training/training.module.js', root));
 class SmokeModule {}
 Module({ imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), PrismaModule, AuthModule, UserModule, TrainingModule] })(SmokeModule);
 const app = await NestFactory.create(SmokeModule, { logger: false });
 app.setGlobalPrefix('api');
-await app.listen(55440, '127.0.0.1');
+await app.listen(backendPort, '127.0.0.1');
 const db = app.get(PrismaService);
-const base = 'http://127.0.0.1:55441';
-const frontend = spawn(process.execPath, [frontendRequire.resolve('next/dist/bin/next'), 'start', '-p', '55441', '--hostname', '127.0.0.1'], {
+const sessions = app.get(AuthSessionService);
+const base = `http://127.0.0.1:${frontendPort}`;
+const frontend = spawn(process.execPath, [frontendRequire.resolve('next/dist/bin/next'), 'start', '-p', String(frontendPort), '--hostname', '127.0.0.1'], {
   cwd: fileURLToPath(new URL('apps/frontend/', root)),
-  env: { ...process.env, BACKEND_URL: 'http://127.0.0.1:55440', NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: '1' },
+  env: { ...process.env, BACKEND_URL: backend, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: '1' },
   stdio: 'ignore', windowsHide: true,
 });
 let browser;
 let userId;
+let previousOwnerId;
 let trainingId;
 const ids = [];
 const results = [];
@@ -48,25 +60,38 @@ try {
     if (attempt === 119) throw new Error('Next.js did not become ready');
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  const user = await db.user.create({ data: { firstName: 'Browser Fixture', role: 'COACH' } });
+  const username = `browser_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+  const identity = { id: Date.now(), username, first_name: 'Browser Fixture' };
+  const previousOwner = await db.user.create({ data: { username, firstName: 'Previous username owner' } });
+  previousOwnerId = previousOwner.id;
+  const user = await db.user.create({ data: { telegramId: String(identity.id), firstName: 'Browser Fixture', role: 'COACH' } });
   userId = user.id;
   const event = await db.training.create({ data: { title: 'Browser smoke training', date: new Date(), startTime: '07:00', endTime: '09:00', maxParticipants: 1 } });
   trainingId = event.id;
   await db.booking.create({ data: { userId, trainingId } });
   browser = await chromium.launch({ channel: process.env.TEST_BROWSER_CHANNEL || 'chrome', headless: true });
   const context = await browser.newContext();
+  await context.route('https://t.me/**', (route) => route.abort());
   const page = await context.newPage();
   const apiAddresses = [];
   page.on('request', (request) => { if (request.url().includes('/api/')) apiAddresses.push(request.url()); });
   async function login() {
-    const id = randomUUID(); ids.push(id);
-    await db.authSession.create({ data: { id, status: 'CONFIRMED', userId } });
-    const csrf = await (await context.request.get(`${base}/api/auth/csrf`)).json();
-    const response = await context.request.post(`${base}/api/auth/callback/telegram-session`, { form: { csrfToken: csrf.csrfToken, sessionId: id, callbackUrl: `${base}/`, json: 'true' } });
-    assert.equal(response.status(), 200);
+    await page.goto(`${base}/auth/signin`);
+    const initialized = page.waitForResponse((response) => response.url() === `${base}/api/bot-auth/init-session` && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Войти через Telegram', exact: true }).click();
+    const { sessionId: id } = await (await initialized).json();
+    ids.push(id);
+    // Only Telegram's external identity assertion is replaced. The UI starts,
+    // polls and exchanges a genuine session through NextAuth and the backend.
+    await sessions.confirm(id, identity);
+    await page.waitForURL(/\/(profile|onboarding)$/);
     assert.equal((await db.authSession.findUniqueOrThrow({ where: { id } })).status, 'CONSUMED');
+    const session = await (await context.request.get(`${base}/api/auth/session`)).json();
+    assert.equal(Number(session.user.id), userId);
+    assert.equal((await db.user.findUniqueOrThrow({ where: { id: previousOwnerId } })).username, username);
   }
   await login();
+  results.push('TelegramLogin UI handles username collision without taking another profile');
   await page.goto(`${base}/`);
   await page.waitForURL('**/onboarding');
   await page.getByText('Определяем твой уровень', { exact: true }).waitFor({ state: 'visible' });
@@ -115,5 +140,6 @@ try {
   await db.authSession.deleteMany({ where: { id: { in: ids } } });
   if (trainingId) await db.training.delete({ where: { id: trainingId } });
   if (userId) await db.user.delete({ where: { id: userId } });
+  if (previousOwnerId) await db.user.delete({ where: { id: previousOwnerId } });
   await app.close();
 }
