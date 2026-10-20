@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import { CreateTrainingSchema } from '@govolley/shared-types';
-export const trainingSchema = CreateTrainingSchema.safeExtend({
-  id: z.number().int().positive(), description: z.string().nullable(), price: z.number().nullable(),
-  coachName: z.string().nullable(), location: z.string().nullable(), isActive: z.boolean(),
-  currentParticipants: z.number().int().nonnegative(), isBooked: z.boolean(),
-  createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(),
-});
+export { TrainingResponseSchema as trainingSchema } from '@govolley/shared-types';
 export const profileSchema = z.object({
   id: z.number().int().positive(), firstName: z.string().nullable(), lastName: z.string().nullable(),
   username: z.string().nullable(), image: z.string().nullable(), role: z.enum(['USER','COACH','ADMIN']),

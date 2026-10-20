@@ -53,16 +53,17 @@ export class TrainingController {
   }
   @Patch(':id')
   @UseGuards(JwtAuthGuard, TrainingManagerGuard)
-  update(@Param('id') id: string, @Body() body: unknown) {
+  update(@Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
     return this.trainingService.update(
       validate(idSchema, id),
       validate(UpdateTrainingSchema, body),
+      userId(req),
     );
   }
   @Delete(':id')
   @UseGuards(JwtAuthGuard, TrainingManagerGuard)
-  remove(@Param('id') id: string) {
-    return this.trainingService.remove(validate(idSchema, id));
+  remove(@Param('id') id: string, @Req() req: Request) {
+    return this.trainingService.remove(validate(idSchema, id), userId(req));
   }
   @Post('book')
   @UseGuards(JwtAuthGuard)
