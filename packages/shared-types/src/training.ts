@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SkillLevel } from './enums.js';
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const optionalText = z.string().trim().max(200).nullable().optional();
 const fields = z.strictObject({
@@ -7,7 +8,7 @@ const fields = z.strictObject({
   date: z.iso.datetime({ offset: true }),
   startTime: time,
   endTime: time,
-  targetLevel: z.enum(['NOT_SET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  targetLevel: z.enum(SkillLevel),
   maxParticipants: z.number().int().min(1).max(100),
   price: z.number().finite().nonnegative().nullable().optional(),
   coachName: optionalText,
@@ -33,7 +34,7 @@ export const TrainingResponseSchema = z.object({
   date: z.iso.datetime({ offset: true }),
   startTime: time,
   endTime: time,
-  targetLevel: z.enum(['NOT_SET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  targetLevel: z.enum(SkillLevel),
   maxParticipants: z.number().int().nonnegative(),
   currentParticipants: z.number().int().nonnegative(),
   isBooked: z.boolean(),
