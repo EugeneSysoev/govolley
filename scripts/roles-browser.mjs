@@ -1,54 +1,14 @@
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
+import { startBrowserRuntime } from './browser-runtime.mjs';
 
 // Real Nest + NextAuth + browser + PostgreSQL; only Telegram confirmation is a fixture.
-const database = process.env.TEST_DATABASE_URL;
-const target = database && new URL(database);
-if (!target || !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) || !target.pathname.endsWith('_test')) {
-  throw new Error('Set TEST_DATABASE_URL to a dedicated local *_test database');
-}
-process.env.DATABASE_URL = database;
-process.env.NEXTAUTH_SECRET = 'roles-browser-only-secret';
-const backendPort = Number(process.env.TEST_BACKEND_PORT || 55570);
-const frontendPort = Number(process.env.TEST_FRONTEND_PORT || 55571);
-const base = `http://127.0.0.1:${frontendPort}`;
-const root = new URL('../', import.meta.url);
-const backendRequire = createRequire(new URL('apps/backend/package.json', root));
-const frontendRequire = createRequire(new URL('apps/frontend/package.json', root));
-const { Module } = backendRequire('@nestjs/common');
-const { NestFactory } = backendRequire('@nestjs/core');
-const { ConfigModule } = backendRequire('@nestjs/config');
-const { chromium } = frontendRequire('@playwright/test');
-const { PrismaModule } = await import(new URL('apps/backend/dist/src/prisma/prisma.module.js', root));
-const { PrismaService } = await import(new URL('apps/backend/dist/src/prisma/prisma.service.js', root));
-const { AuthModule } = await import(new URL('apps/backend/dist/src/auth/auth.module.js', root));
-const { UserModule } = await import(new URL('apps/backend/dist/src/user/user.module.js', root));
-const { TrainingModule } = await import(new URL('apps/backend/dist/src/training/training.module.js', root));
-class RolesBrowserModule {}
-Module({ imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), PrismaModule, AuthModule, UserModule, TrainingModule] })(RolesBrowserModule);
-const app = await NestFactory.create(RolesBrowserModule, { logger: false });
-app.setGlobalPrefix('api');
-await app.listen(backendPort, '127.0.0.1');
-const db = app.get(PrismaService);
-const frontend = spawn(process.execPath, [frontendRequire.resolve('next/dist/bin/next'), 'start', '-p', String(frontendPort), '--hostname', '127.0.0.1'], {
-  cwd: fileURLToPath(new URL('apps/frontend/', root)),
-  env: { ...process.env, BACKEND_URL: `http://127.0.0.1:${backendPort}`, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: '1' },
-  stdio: 'ignore', windowsHide: true,
-});
-let browser;
+const runtime = await startBrowserRuntime({ backendPort: 55570, frontendPort: 55571, secret: 'roles-browser-only-secret' });
+const { base, db, browser } = runtime;
 const users = [];
 const sessions = [];
 const passed = [];
 try {
-  for (let attempt = 0; attempt < 120; attempt++) {
-    try { if ((await fetch(`${base}/api/auth/csrf`)).ok) break; } catch { /* Starting. */ }
-    if (attempt === 119) throw new Error('Next.js did not become ready');
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  browser = await chromium.launch({ channel: process.env.TEST_BROWSER_CHANNEL || 'chrome', headless: true });
   async function login(role) {
     const user = await db.user.create({ data: { role, firstName: `Browser ${role}`, skillLevel: 'BEGINNER' } });
     users.push(user.id);
@@ -99,9 +59,8 @@ try {
   passed.push('ADMIN cannot grant ADMIN through the public role endpoint');
   console.log(JSON.stringify({ passed }, null, 2));
 } finally {
-  await browser?.close();
-  frontend.kill();
-  await db.authSession.deleteMany({ where: { id: { in: sessions } } });
-  await db.user.deleteMany({ where: { id: { in: users } } });
-  await app.close();
+  await runtime.close(async () => {
+    await db.authSession.deleteMany({ where: { id: { in: sessions } } });
+    await db.user.deleteMany({ where: { id: { in: users } } });
+  });
 }
