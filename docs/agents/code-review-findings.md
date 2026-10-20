@@ -45,7 +45,8 @@
 
 ### SPEC-002 — P2: PATCH/DELETE тренировки возвращают неверный isBooked
 
-- Статус: `open`.
+- Статус: `closed` — 2026-10-21, принята в интеграционную ветку (issue остаётся связанной с общим PR до его слияния).
+- Evidence: [интеграционная приёмка #2](../history/2026-10-21/ISSUE-2-INTEGRATION.md), merge `dabd0c4a4c3554c0af2734248af73046ebc290ec`: PostgreSQL HTTP 18/18, frontend контракт/API/SSR 17/17, shared build и backend typecheck; отдельные Standards/Spec без открытых замечаний. Исходное воспроизведение ниже сохранено.
 - Задача: [#2](https://github.com/EugeneSysoev/govolley/issues/2).
 - Основание: README.md:95 — «isBooked относится к текущему пользователю».
 - Код: `apps/backend/src/training/training.service.ts:71,74–76`; вызывающий код — `apps/backend/src/training/training.controller.ts:56–65`.

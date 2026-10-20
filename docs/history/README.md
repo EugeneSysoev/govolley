@@ -54,3 +54,9 @@
 - [Результат интеграции](2026-10-21/ISSUE-3-INTEGRATION.md): Telegram-вход при коллизии username принят в `codex/govolley-mvp`, merge `5bc32e50132b1d696aa258c7cf995e7c0f4f1853` без конфликтов; SPEC-001 закрыта по собственным критериям.
 - Отдельно сохранены [Standards](2026-10-21/reviews/issue-3-standards.md) и [Spec](2026-10-21/reviews/issue-3-spec.md); замечаний нет. На объединённой ветке успешно выполнены backend typecheck и PostgreSQL integration: 2 набора, 15 тестов.
 - Миграций нет. Остальные проверки из [отчёта задачи](2026-10-19/ISSUE-3.md) сохраняют свою дату. Живой Telegram, production и готовность всего MVP этим этапом не подтверждаются.
+
+## 2026-10-21 — интеграционная приёмка #2
+
+- [Результат интеграции](2026-10-21/ISSUE-2-INTEGRATION.md): общий контракт чтения тренировки и корректный isBooked приняты после #3, merge `dabd0c4a4c3554c0af2734248af73046ebc290ec` без конфликтов; SPEC-002 закрыта по собственным критериям.
+- [Standards](2026-10-21/reviews/issue-2-standards.md) и [Spec](2026-10-21/reviews/issue-2-spec.md) на финальном HEAD без открытых замечаний; историческое P3 исправлено и сохранено в отчёте.
+- На объединённой ветке прошли shared-types build, backend typecheck, PostgreSQL integration 18/18 и три frontend-набора 17/17 (контракт, browser API, SSR/карточка). Миграций нет. Исторические проверки [отчёта задачи](2026-10-19/issue-2-training-contract.md) не перенесены на новый запуск; #15 и итоговое ревью PR ещё предстоят.
