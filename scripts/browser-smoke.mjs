@@ -1,65 +1,17 @@
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
+import { startBrowserRuntime } from './browser-runtime.mjs';
 
 // Real NextAuth + Nest + PostgreSQL. Telegram confirmation is replaced by a fixture.
 // Build with BACKEND_URL matching TEST_BACKEND_PORT before running.
-function port(name, fallback) {
-  const value = Number(process.env[name] ?? fallback);
-  if (!Number.isInteger(value) || value < 1024 || value > 65535) throw new Error(`Invalid ${name}`);
-  return value;
-}
-const backendPort = port('TEST_BACKEND_PORT', 55440);
-const frontendPort = port('TEST_FRONTEND_PORT', 55441);
-if (backendPort === frontendPort) throw new Error('Test servers require separate ports');
-const backend = `http://127.0.0.1:${backendPort}`;
-const database = process.env.TEST_DATABASE_URL;
-const target = database && new URL(database);
-if (!target || !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) || !target.pathname.endsWith('_test')) {
-  throw new Error('Set TEST_DATABASE_URL to a dedicated local *_test database');
-}
-process.env.DATABASE_URL = database;
-process.env.NEXTAUTH_SECRET = 'browser-smoke-only-secret';
-const root = new URL('../', import.meta.url);
-const backendRequire = createRequire(new URL('apps/backend/package.json', root));
-const frontendRequire = createRequire(new URL('apps/frontend/package.json', root));
-const { Module } = backendRequire('@nestjs/common');
-const { NestFactory } = backendRequire('@nestjs/core');
-const { ConfigModule } = backendRequire('@nestjs/config');
-const { chromium } = frontendRequire('@playwright/test');
-const { PrismaModule } = await import(new URL('apps/backend/dist/src/prisma/prisma.module.js', root));
-const { PrismaService } = await import(new URL('apps/backend/dist/src/prisma/prisma.service.js', root));
-const { AuthModule } = await import(new URL('apps/backend/dist/src/auth/auth.module.js', root));
-const { AuthSessionService } = await import(new URL('apps/backend/dist/src/auth/auth-session.service.js', root));
-const { UserModule } = await import(new URL('apps/backend/dist/src/user/user.module.js', root));
-const { TrainingModule } = await import(new URL('apps/backend/dist/src/training/training.module.js', root));
-class SmokeModule {}
-Module({ imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), PrismaModule, AuthModule, UserModule, TrainingModule] })(SmokeModule);
-const app = await NestFactory.create(SmokeModule, { logger: false });
-app.setGlobalPrefix('api');
-await app.listen(backendPort, '127.0.0.1');
-const db = app.get(PrismaService);
-const sessions = app.get(AuthSessionService);
-const base = `http://127.0.0.1:${frontendPort}`;
-const frontend = spawn(process.execPath, [frontendRequire.resolve('next/dist/bin/next'), 'start', '-p', String(frontendPort), '--hostname', '127.0.0.1'], {
-  cwd: fileURLToPath(new URL('apps/frontend/', root)),
-  env: { ...process.env, BACKEND_URL: backend, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: '1' },
-  stdio: 'ignore', windowsHide: true,
-});
-let browser;
+const runtime = await startBrowserRuntime({ backendPort: 55440, frontendPort: 55441, secret: 'browser-smoke-only-secret' });
+const { base, db, browser, sessions } = runtime;
 let userId;
 let previousOwnerId;
 let trainingId;
 const ids = [];
 const results = [];
 try {
-  for (let attempt = 0; attempt < 120; attempt++) {
-    try { if ((await fetch(`${base}/api/auth/csrf`)).ok) break; } catch { /* Starting. */ }
-    if (attempt === 119) throw new Error('Next.js did not become ready');
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
   const username = `browser_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
   const identity = { id: Date.now(), username, first_name: 'Browser Fixture' };
   const previousOwner = await db.user.create({ data: { username, firstName: 'Previous username owner' } });
@@ -69,7 +21,6 @@ try {
   const event = await db.training.create({ data: { title: 'Browser smoke training', date: new Date(), startTime: '07:00', endTime: '09:00', maxParticipants: 1 } });
   trainingId = event.id;
   await db.booking.create({ data: { userId, trainingId } });
-  browser = await chromium.launch({ channel: process.env.TEST_BROWSER_CHANNEL || 'chrome', headless: true });
   const context = await browser.newContext();
   await context.route('https://t.me/**', (route) => route.abort());
   const page = await context.newPage();
@@ -135,11 +86,10 @@ try {
   results.push('browser API stays same-origin; NextAuth routes preserved');
   console.log(JSON.stringify({ passed: results }, null, 2));
 } finally {
-  await browser?.close();
-  frontend.kill();
-  await db.authSession.deleteMany({ where: { id: { in: ids } } });
-  if (trainingId) await db.training.delete({ where: { id: trainingId } });
-  if (userId) await db.user.delete({ where: { id: userId } });
-  if (previousOwnerId) await db.user.delete({ where: { id: previousOwnerId } });
-  await app.close();
+  await runtime.close(async () => {
+    await db.authSession.deleteMany({ where: { id: { in: ids } } });
+    if (trainingId) await db.training.delete({ where: { id: trainingId } });
+    if (userId) await db.user.delete({ where: { id: userId } });
+    if (previousOwnerId) await db.user.delete({ where: { id: previousOwnerId } });
+  });
 }

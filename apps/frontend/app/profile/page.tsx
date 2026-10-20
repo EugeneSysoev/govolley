@@ -222,6 +222,11 @@ export default function ProfilePage() {
               )}
             </div>
             {!isEditing && <LogoutButton />}
+            {profile?.role === 'ADMIN' && (
+              <Link href="/admin/coaches" className="mt-6 text-brand-lime underline text-center">
+                Управление тренерами
+              </Link>
+            )}
           </motion.div>
 
           {/* Секция бронирований */}
