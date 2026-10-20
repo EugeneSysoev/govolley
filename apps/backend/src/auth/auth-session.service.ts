@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { publicProfile } from '../user/public-profile.js';
 export const AUTH_SESSION_TTL_MS = 10 * 60 * 1000;
@@ -38,6 +39,26 @@ export class AuthSessionService {
     return { status: session.status.toLowerCase() };
   }
   async confirm(id: string, identity: TelegramIdentity): Promise<void> {
+    try {
+      await this.confirmIdentity(id, identity, true);
+    } catch (error) {
+      if (
+        !identity.username ||
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== 'P2002'
+      )
+        throw error;
+      // A mutable username cannot prevent authentication by telegramId. Retry
+      // the entire transaction: a unique violation aborts PostgreSQL's transaction.
+      // The claim is checked again, so competing confirmations still have one winner.
+      await this.confirmIdentity(id, identity, false);
+    }
+  }
+  private async confirmIdentity(
+    id: string,
+    identity: TelegramIdentity,
+    syncUsername: boolean,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // Claim before user changes. Concurrent/replayed confirmations cannot change identity.
       const claimed = await tx.authSession.updateMany({
@@ -49,7 +70,7 @@ export class AuthSessionService {
           'Сессия недоступна. Начните вход заново',
         );
       const profile = {
-        username: identity.username ?? null,
+        ...(syncUsername ? { username: identity.username ?? null } : {}),
         firstName: identity.first_name,
         lastName: identity.last_name ?? null,
       };
