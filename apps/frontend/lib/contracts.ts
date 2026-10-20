@@ -13,6 +13,9 @@ export const profileSchema = z.object({
   isLevelVerified: z.boolean(), createdAt: z.iso.datetime(),
 });
 export type Profile = z.infer<typeof profileSchema>;
+export const roleCandidatesSchema = z.array(profileSchema.pick({
+  id: true, firstName: true, lastName: true, username: true, role: true,
+}));
 export const loginSchema = profileSchema.extend({ accessToken: z.string().min(1) });
 export const bookingsSchema = z.array(z.object({
   id: z.number().int(), status: z.enum(['CONFIRMED','CANCELLED']), createdAt: z.iso.datetime(),
