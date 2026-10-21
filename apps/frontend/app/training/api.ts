@@ -8,6 +8,6 @@ export const trainingApi = {
   create: (data: CreateTrainingDto, token?: string) => api('/training', trainingSchema, { method: 'POST', body: JSON.stringify(data) }, token),
   update: (id: number, data: UpdateTrainingDto, token?: string) => api(`/training/${id}`, trainingSchema, { method: 'PATCH', body: JSON.stringify(data) }, token),
   delete: (id: number, token?: string) => api(`/training/${id}`, trainingSchema, { method: 'DELETE' }, token),
-  book: (id: number, token: string) => api('/training/book', trainingSchema, { method: 'POST', body: JSON.stringify({ trainingId: id }) }, token),
-  unbook: (id: number, token: string) => api('/training/unbook', trainingSchema, { method: 'POST', body: JSON.stringify({ trainingId: id }) }, token),
+  book: (id: number, token: string, requestId: string) => api('/training/book', trainingSchema, { method: 'POST', body: JSON.stringify({ trainingId: id, requestId }) }, token),
+  unbook: (id: number, token: string, bookingId: number) => api('/training/unbook', trainingSchema, { method: 'POST', body: JSON.stringify({ trainingId: id, bookingId }) }, token),
 };

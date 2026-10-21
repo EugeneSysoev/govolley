@@ -35,7 +35,7 @@ it.each([null, '', '   '])('shows school day, price, description and legacy loca
   expect(card).toContain('500 ฿');
   expect(card).toContain('Начинающий');
   expect(card).toContain('Уточняется');
-  const profile = renderToStaticMarkup(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', createdAt: saved.createdAt, training: saved }]} />);
+  const profile = renderToStaticMarkup(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', kind: 'LEGACY', paymentType: 'BALANCE', cashPrice: null, paymentStatus: 'UNRECORDED', cancelledAt: null, cancellationTiming: null, createdAt: saved.createdAt, training: saved }]} />);
   expect(profile).toContain('1 ноября');
   expect(profile).toContain('Asia/Bangkok');
   expect(profile).toContain('Уточняется');

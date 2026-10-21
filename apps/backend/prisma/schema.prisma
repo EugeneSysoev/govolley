@@ -19,6 +19,16 @@ enum SkillLevel {
   ADVANCED     // Продвинутый
 }
 
+enum BookingKind {
+  LEGACY
+  SINGLE_CASH
+}
+
+enum CancellationTiming {
+  TIMELY
+  LATE
+}
+
 model User {
   id              Int           @id @default(autoincrement())
   telegramId      String?       @unique
@@ -68,11 +78,18 @@ model Booking {
   training    Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   status      String   @default("CONFIRMED") // CONFIRMED, CANCELLED
   paymentType String   @default("CASH")      // CASH, BALANCE
+  kind        BookingKind @default(LEGACY)
+  cashPrice   Int?
+  cancelledAt DateTime?
+  cancellationTiming CancellationTiming?
+  requestId   String? @db.Uuid
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, trainingId])
+  // A partial unique index in SQL permits history, but only one CONFIRMED place.
+  @@index([userId, trainingId])
+  @@unique([userId, requestId])
 }
 
 model AuthSession {

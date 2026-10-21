@@ -3,6 +3,7 @@ export * from './ids.js';
 export * from './training.js';
 export * from './school-time.js';
 export * from './onboarding.js';
+export * from './booking.js';
 /**
  * User
  */
@@ -17,19 +18,6 @@ export interface User {
   skillLevel: import("./enums.js").SkillLevel;
   isLevelVerified: boolean;
   balance: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Booking
- */
-export interface Booking {
-  id: number;
-  userId: number;
-  trainingId: number;
-  status: import("./enums.js").BookingStatus;
-  paymentType: import("./enums.js").PaymentType;
   createdAt: string;
   updatedAt: string;
 }

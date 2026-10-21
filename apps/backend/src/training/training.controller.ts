@@ -28,6 +28,11 @@ const idSchema = z.coerce
   .max(Number.MAX_SAFE_INTEGER);
 const bookingSchema = z.strictObject({
   trainingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  requestId: z.uuid(),
+});
+const cancellationSchema = z.strictObject({
+  trainingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  bookingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
 });
 function userId(req: Request): number {
   if (!req.user) throw new UnauthorizedException();
@@ -68,17 +73,21 @@ export class TrainingController {
   @Post('book')
   @UseGuards(JwtAuthGuard)
   createBooking(@Req() req: Request, @Body() body: unknown) {
+    const booking = validate(bookingSchema, body);
     return this.trainingService.createBooking(
       userId(req),
-      validate(bookingSchema, body).trainingId,
+      booking.trainingId,
+      booking.requestId,
     );
   }
   @Post('unbook')
   @UseGuards(JwtAuthGuard)
   cancelBooking(@Req() req: Request, @Body() body: unknown) {
+    const cancellation = validate(cancellationSchema, body);
     return this.trainingService.cancelBooking(
       userId(req),
-      validate(bookingSchema, body).trainingId,
+      cancellation.trainingId,
+      cancellation.bookingId,
     );
   }
 }
