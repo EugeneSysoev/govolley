@@ -11,10 +11,15 @@ const require = createRequire(new URL('package.json', backend));
 const { Client } = require('pg');
 const prisma = require.resolve('prisma/build/index.js');
 const migrations = new URL('prisma/migrations/', backend);
+const entries = await readdir(migrations, { withFileTypes: true });
+const migrationCount = entries.filter((entry) => entry.isDirectory()).length;
+const issue = process.env.TEST_MIGRATION_ISSUE || 'issue5';
+if (!['issue5', 'issue6'].includes(issue)) throw new Error('Unsupported migration acceptance issue');
+const cutoff = issue === 'issue6' ? '20261022000600' : '20261022000000';
 const baseline = new URL(`.mvp-local/booking-migrations-${randomUUID()}/`, root);
 await mkdir(baseline, { recursive: true });
-for (const entry of await readdir(migrations, { withFileTypes: true })) {
-  if (!entry.name.startsWith('20261022')) {
+for (const entry of entries) {
+  if (!entry.isDirectory() || entry.name < cutoff) {
     await cp(new URL(entry.name, migrations), new URL(entry.name, baseline), { recursive: true });
   }
 }
@@ -34,8 +39,8 @@ function deploy(url, config) {
 for (const [kind, variable] of [['empty', 'TEST_EMPTY_DATABASE_URL'], ['legacy', 'TEST_LEGACY_DATABASE_URL']]) {
   const url = process.env[variable];
   const target = url && new URL(url);
-  if (!target || !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) || !target.pathname.endsWith(`_issue5_${kind}_test`)) {
-    throw new Error(`${variable} must name the dedicated local issue5 ${kind} test database`);
+  if (!target || !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) || !target.pathname.endsWith(`_${issue}_${kind}_test`)) {
+    throw new Error(`${variable} must name the dedicated local ${issue} ${kind} test database`);
   }
   const db = new Client({ connectionString: url });
   await db.connect();
@@ -52,13 +57,18 @@ for (const [kind, variable] of [['empty', 'TEST_EMPTY_DATABASE_URL'], ['legacy',
       before = (await db.query('SELECT id,"userId","trainingId",status,"paymentType","createdAt","updatedAt" FROM "Booking" ORDER BY id')).rows;
     }
     deploy(url, new URL('prisma.config.ts', backend));
-    assert.equal((await db.query('SELECT count(*)::int AS count FROM "_prisma_migrations" WHERE finished_at IS NOT NULL')).rows[0].count, 11);
+    assert.equal((await db.query('SELECT count(*)::int AS count FROM "_prisma_migrations" WHERE finished_at IS NOT NULL')).rows[0].count, migrationCount);
     if (before) {
       assert.deepEqual((await db.query('SELECT id,"userId","trainingId",status,"paymentType","createdAt","updatedAt" FROM "Booking" ORDER BY id')).rows, before);
       const rows = (await db.query('SELECT kind,"cashPrice","requestId","cancelledAt","cancellationTiming" FROM "Booking"')).rows;
       assert.deepEqual(rows, Array.from({ length: 2 }, () => ({ kind: 'LEGACY', cashPrice: null, requestId: null, cancelledAt: null, cancellationTiming: null })));
       assert.equal((await db.query('SELECT balance FROM "User" WHERE balance <> 0')).rowCount, 0);
+      if (issue === 'issue6') {
+        assert.deepEqual((await db.query('SELECT "attendanceStatus", "cashReceived" FROM "Booking" ORDER BY id')).rows,
+          Array.from({ length: 2 }, () => ({ attendanceStatus: 'UNMARKED', cashReceived: null })));
+        assert.equal((await db.query('SELECT count(*)::int AS count FROM "BookingAudit"')).rows[0].count, 0);
+      }
     }
-    console.log(`PASS: ${kind}: 11 migrations, preserved history, no inferred payment or package`);
+    console.log(`PASS: ${issue}/${kind}: ${migrationCount} migrations, preserved history, no inferred payment or package`);
   } finally { await db.end(); }
 }

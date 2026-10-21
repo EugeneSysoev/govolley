@@ -99,10 +99,10 @@ export function ProfileBookings({
                   </div>
                 </div>
                 <p className="text-white/60 text-xs mt-3">
-                  {booking.kind === 'SINGLE_CASH'
-                    ? `Разовая запись: ${booking.cashPrice} ฿ на месте · оплата не получена`
-                    : 'Прежняя запись · оплата не подтверждена'}
+                  {booking.kind === 'SINGLE_CASH' ? `Разовая запись: ${booking.cashPrice} ฿ на месте` : 'Прежняя запись'}
+                  {' · '}{booking.paymentStatus === 'PAID' ? 'оплата получена' : booking.paymentStatus === 'UNPAID' ? 'оплата не получена' : 'оплата не подтверждена'}
                 </p>
+                <p className="text-white/60 text-xs mt-2">Участие: {booking.attendanceStatus === 'ATTENDED' ? 'Посетил' : booking.attendanceStatus === 'NO_SHOW' ? 'Неявка' : 'Не отмечено'}</p>
                 {booking.cancellationTiming && <p className="text-white/60 text-xs mt-2">
                   {booking.cancellationTiming === 'TIMELY' ? 'Своевременная отмена' : 'Поздняя отмена · без долга и штрафа'}
                 </p>}

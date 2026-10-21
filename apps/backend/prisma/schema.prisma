@@ -29,6 +29,17 @@ enum CancellationTiming {
   LATE
 }
 
+enum AttendanceStatus {
+  UNMARKED
+  ATTENDED
+  NO_SHOW
+}
+
+enum BookingAuditField {
+  ATTENDANCE
+  CASH_PAYMENT
+}
+
 model User {
   id              Int           @id @default(autoincrement())
   telegramId      String?       @unique
@@ -46,6 +57,7 @@ model User {
   // Связи
   bookings        Booking[]
   authSessions    AuthSession[]
+  bookingAudits   BookingAudit[]
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -83,6 +95,9 @@ model Booking {
   cancelledAt DateTime?
   cancellationTiming CancellationTiming?
   requestId   String? @db.Uuid
+  attendanceStatus AttendanceStatus @default(UNMARKED)
+  cashReceived Boolean?
+  auditEntries BookingAudit[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -90,6 +105,23 @@ model Booking {
   // A partial unique index in SQL permits history, but only one CONFIRMED place.
   @@index([userId, trainingId])
   @@unique([userId, requestId])
+}
+
+model BookingAudit {
+  id        Int @id @default(autoincrement())
+  bookingId Int
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actorId   Int
+  actor     User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  requestId String @db.Uuid
+  field     BookingAuditField
+  oldValue  String
+  newValue  String
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@unique([actorId, requestId])
+  @@index([bookingId, id])
 }
 
 model AuthSession {

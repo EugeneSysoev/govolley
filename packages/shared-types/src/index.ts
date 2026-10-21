@@ -4,6 +4,7 @@ export * from './training.js';
 export * from './school-time.js';
 export * from './onboarding.js';
 export * from './booking.js';
+export * from './participants.js';
 /**
  * User
  */

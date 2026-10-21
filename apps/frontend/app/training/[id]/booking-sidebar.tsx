@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MagneticButton } from '@/components/magnetic-button';
 import type { Training } from '../types';
@@ -107,6 +108,7 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
       </div>
 
       {error && <p role="alert" className="text-red-400 mb-4">{error}</p>}
+      {(session?.user?.role === 'COACH' || session?.user?.role === 'ADMIN') && <Link href={`/training/${training.id}/participants`} className="text-brand-lime mb-6">Участники и учёт →</Link>}
       <div className="text-white/60 text-sm mb-6 space-y-2">
         <p>500 ฿ на месте. Оплата при посещении.</p>
         <p>Отмена за 3 часа или раньше — своевременная. Поздняя разовая отмена — без долга и штрафа.</p>
