@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { startBrowserRuntime } from './browser-runtime.mjs';
+const { expect } = createRequire(new URL('../apps/frontend/package.json', import.meta.url))('@playwright/test');
 
 const runtime = await startBrowserRuntime({ backendPort: 55960, frontendPort: 55961, secret: 'participants-browser-only-secret' });
 const { base, db, browser, sessions } = runtime;
@@ -35,7 +37,8 @@ try {
       page.getByRole('button', { name: button, exact: true }).click(),
     ]);
     assert.equal(response.status(), 200);
-    await page.getByText(reason, { exact: true }).waitFor();
+    await page.getByRole('listitem').getByText(reason, { exact: true }).waitFor();
+    await expect(page.getByLabel('Основание изменения', { exact: true })).toHaveValue('');
   }
   await page.getByLabel('Посещение', { exact: true }).selectOption('NO_SHOW');
   await save('Сохранить посещение', 'Не пришёл на площадку');
