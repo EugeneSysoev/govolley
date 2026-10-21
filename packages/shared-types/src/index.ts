@@ -5,6 +5,7 @@ export * from './school-time.js';
 export * from './onboarding.js';
 export * from './booking.js';
 export * from './participants.js';
+export * from './notifications.js';
 /**
  * User
  */

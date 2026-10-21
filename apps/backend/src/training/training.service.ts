@@ -18,6 +18,7 @@ import type {
 import { schoolTimeInstant } from '@govolley/shared-types';
 import { TrainingClock } from './training-clock.js';
 import { randomUUID } from 'node:crypto';
+import { NotificationsService } from '../notifications/notifications.service.js';
 type WithBookings = StoredTraining & {
   bookings: Pick<Booking, 'id' | 'userId'>[];
 };
@@ -32,6 +33,7 @@ export class TrainingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clock: TrainingClock,
+    private readonly notifications: NotificationsService,
   ) {}
   async create(dto: CreateTrainingDto): Promise<Training> {
     const training = await this.prisma.training.create({
@@ -134,7 +136,7 @@ export class TrainingService {
         });
         if (count >= training.maxParticipants)
           throw new ConflictException('Нет свободных мест');
-        await tx.booking.create({
+        const booking = await tx.booking.create({
           data: {
             userId,
             trainingId,
@@ -144,6 +146,12 @@ export class TrainingService {
             cashPrice: 500,
             requestId,
           },
+        });
+        await this.notifications.recordBooking(tx, {
+          bookingId: booking.id,
+          userId,
+          training,
+          kind: 'BOOKING_CONFIRMED',
         });
       }
       return this.readInTransaction(tx, trainingId, userId);
@@ -176,6 +184,12 @@ export class TrainingService {
                 ? 'TIMELY'
                 : 'LATE',
           },
+        });
+        await this.notifications.recordBooking(tx, {
+          bookingId: booking.id,
+          userId,
+          training,
+          kind: 'BOOKING_CANCELLED',
         });
       }
       return this.readInTransaction(tx, trainingId, userId);

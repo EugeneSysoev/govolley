@@ -227,6 +227,11 @@ export default function ProfilePage() {
                 Управление тренерами
               </Link>
             )}
+            {(profile?.role === 'ADMIN' || profile?.role === 'COACH') && (
+              <Link href="/staff/notifications" className="mt-6 text-brand-lime underline text-center">
+                Telegram-уведомления
+              </Link>
+            )}
           </motion.div>
 
           {/* Секция бронирований */}
