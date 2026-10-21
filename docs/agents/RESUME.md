@@ -1,68 +1,60 @@
-# GoVolley MVP: продолжение в новом чате
+# GoVolley MVP: продолжение
 
-Обновлено 2026-10-21 после поручения оптимизировать процесс и остановиться до 50% пятичасового лимита. Реализация в этом запуске не возобновлялась; сохранены существующие изменения и инструкции.
+Обновлено 2026-10-21 после приёмки #7/#4. Текущая работа: независимая #14; #5 доступна после принятой #4. До завершения запуска сверять финальный checkpoint и git, поскольку работа может продолжаться.
 
 ## Первые действия
 
-1. Прочитать [действующий процесс](development-plan.md), проверить get_usage_limits и его абсолютный usedPercent для окна 300 минут. При >=50% ограничиться сохранением состояния и завершением. С 40% не запускать новые задачи, с 45% готовить паузу. Последний показатель предыдущего запуска — 97%, затем агент получил usage-limit error; это не текущее измерение.
-2. Сверить git status, git worktree list, HEAD и состояние существующего PR. Работать с сохранёнными ветками, сохраняя появившиеся изменения. Для продуктового запуска один раз прочитать PROJECT.md → MVP-SPEC.md; исполнителям передать точные разделы.
-3. Сначала завершить приёмку сохранённых #7/#4 по шагам ниже. Новые задачи брать только после подтверждения блокировок. Максимум два исполнителя, короткий контекст, fork_turns="none".
+1. Прочитать [действующий процесс](development-plan.md), проверить get_usage_limits: bucket `codex`, абсолютный usedPercent окна 300 минут. При >=50% только сохранение/завершение; с40% не начинать задачи, с45% checkpoint и остановка. В этом запуске старт7%, последнее измерение31%; это исторический показатель, не текущий датчик.
+2. Сверить git status, worktree list, HEAD и PR #16. Сохранить существующий WIP. Для продуктового запуска один раз PROJECT.md → MVP-SPEC.md; исполнителям только применимые разделы.
+3. Сначала закончить начатую #14 с независимым Standards/Spec и интеграцией; затем доступный граф по бюджету. Максимум два исполнителя, fork_turns="none". Полный процесс в development-plan.md, включая проверки по риску и переиспользование evidence.
 
-В существующих worktree версии AGENTS.md/плана могут быть старыми. В поручении указывать policy_source: текущие AGENTS.md и docs/agents/development-plan.md из интеграционного root, с его SHA. Текущий согласованный процесс имеет приоритет над историческими поручениями и прежними циклами проверок; отдельное копирование процессных файлов в продуктовые ветки не требуется.
-
-## Репозиторий и ветки
+## Репозиторий и PR
 
 - Root: C:/Users/User/Desktop/Рабочий стол/Кодинг/Проекты/govolley.
-- Интеграция: codex/govolley-mvp. Последний кодовый merge: e740648f047c302702c687d077e005c77a40dd95; последующие коммиты могут обновлять документацию — текущий HEAD получить через git.
-- [Единственный PR #16](https://github.com/EugeneSysoev/govolley/pull/16), draft, base main. Ready пока запрещён: #15 и итоговое ревью не выполнены.
-- Исходный SHA MVP: f685aa55f1e8e340401d9f582bf8beef35c3f6e5, baseline 479a127b6827c62599ce08dcb0839b2df5fa11dd. Последняя подтверждённая удалённая base main: 0959c948a7a287d06f84728799ebe5b1be68eaad. Итоговое ревью учитывает весь фактический PR diff, включая ранее локальный baseline.
-- Последний подтверждённый push интеграции — 721414e; merge #7 и новые процессные коммиты пока считать локальными до проверки remote. В этом документальном запуске push не заявляется.
+- Интеграционная ветка codex/govolley-mvp. Принятый кодовый merge #4: `0a2ab89b9d79656a54eacff9e760e5cc7404d471`; следующий документальный HEAD `d173c5edd83159c20c54d274cbec6fad05168b5a` подтверждён push в origin.
+- [Единственный PR #16](https://github.com/EugeneSysoev/govolley/pull/16), draft, base main. Ready запрещён до #15 и итогового двухосевого ревью фактического PR diff. Main/production не изменять.
+- Исходный SHA MVP f685aa55f1e8e340401d9f582bf8beef35c3f6e5, baseline479a127b6827c62599ce08dcb0839b2df5fa11dd. Последняя подтверждённая удалённая base main0959c948a7a287d06f84728799ebe5b1be68eaad; итоговое ревью включает весь PR, включая прежний локальный baseline.
+- Обычные git worktree под `.worktrees/`, сохранять до завершения. Они не управляются приложением.
 
-| Issue | Ветка / worktree от root | SHA / состояние |
+| Issue | Ветка / worktree | SHA / статус |
 | --- | --- | --- |
-| #2 | codex/mvp-issue-2 / .worktrees/issue-2 | task HEAD 37093608732623b7d82e8698d7a35da59d9978bc; принята и закрыта, merge dabd0c4a4c3554c0af2734248af73046ebc290ec |
-| #3 | codex/mvp-issue-3 / .worktrees/issue-3 | task HEAD 8b22bde223d6eaa04f4c7fe6c3ca7119d71a9997; принята и закрыта, merge 5bc32e50132b1d696aa258c7cf995e7c0f4f1853 |
-| #7 | codex/mvp-issue-7 / .worktrees/issue-7 | task HEAD 4cbdd9525d70d798b22e16cc1c0d41f6fd136607; слита merge e740648, интеграционная приёмка ожидается |
-| #4 | codex/mvp-issue-4 / .worktrees/issue-4 | WIP snapshot 0e4c9eb50cf87ab8db6748bf2c196b741acb37ef; не слита, проверки/ревью не завершены |
+| #2 | codex/mvp-issue-2 / .worktrees/issue-2 | 37093608732623b7d82e8698d7a35da59d9978bc; принята/закрыта, merge dabd0c4a4c3554c0af2734248af73046ebc290ec |
+| #3 | codex/mvp-issue-3 / .worktrees/issue-3 | 8b22bde223d6eaa04f4c7fe6c3ca7119d71a9997; принята/закрыта, merge5bc32e50132b1d696aa258c7cf995e7c0f4f1853 |
+| #7 | codex/mvp-issue-7 / .worktrees/issue-7 | 4cbdd9525d70d798b22e16cc1c0d41f6fd136607; принята/закрыта, merge e740648f047c302702c687d077e005c77a40dd95 |
+| #4 | codex/mvp-issue-4 / .worktrees/issue-4 | 56cd765a49e8c2cb7ac74209337e932b1767a629; принята/закрыта, merge0a2ab89; worktree чистая при передаче |
+| #14 | codex/mvp-issue-14 / .worktrees/issue-14 | начата от task_base_sha d173c5edd83159c20c54d274cbec6fad05168b5a; итог и dirty проверить |
 
-Task bases: #2/#3 — f685aa55f1e8e340401d9f582bf8beef35c3f6e5; #7 — 6cdd0bf2d2a3c79d39ae16eb36a5d4223e624908; #4 — a1d670b5dc173c7cf578930ffa9ca9931e5fe510. При подготовке передачи root до правок документов был чистым; #4 после WIP-коммита проверить на новые изменения. Worktree обычные git worktree, не управляемые приложением; сохранять до завершения.
+Task bases #2/#3: f685aa55f1e8e340401d9f582bf8beef35c3f6e5; #7:6cdd0bf2d2a3c79d39ae16eb36a5d4223e624908; #4:a1d670b5dc173c7cf578930ffa9ca9931e5fe510. В существующих worktree инструкции могут быть старыми: policy_source — актуальные AGENTS.md и development-plan.md интеграционного root с явным SHA. Отдельное копирование процессных файлов в продуктовые ветки не требуется.
 
-## Точные следующие шаги
+## Принятые #7/#4
 
-### #7: проверить результат интеграции
+- [Приёмка #7](../history/2026-10-21/ISSUE-7-INTEGRATION.md): на HEAD4326a53 HTTP/PostgreSQL23/23, build/typecheck, smoke8, roles4, дополнительно frontend contract11/11. Сохранены TelegramLogin/collision из #3 и общий browser-runtime из #7. Обе оси проверили конфликтную часть без замечаний. GitHub #7 закрыта после evidence-комментария.
+- [Приёмка #4](../history/2026-10-21/ISSUE-4-INTEGRATION.md): на merge0a2ab89 HTTP/PostgreSQL26/26, frontend contracts/API/SSR20/20, build/typecheck, school-time browser оба timezone и smoke8. School-time переведён на общий runtime, UUID fixtures и Promise.all response/click сохранены. STD-R4-001 проверен автором и закрыт. STD-002/SPEC-003 закрыты по исходным критериям, GitHub#4 закрыта после evidence.
+- Исходные успешные unit/lint/e2e задачи переиспользованы со snapshot0e4c9eb и датой из [checkpoint](../history/2026-10-21/issue-4-checkpoint.md)/[completion](../history/2026-10-21/issue-4-completion.md). Без новой причины повторять не нужно.
+- Shared `schoolDateKey`, `schoolDateIso`, `schoolTimeInstant`, `SCHOOL_TIME_ZONE` экспортируются из shared-types. Для #5/#11 использовать schoolTimeInstant(date,startTime), не локальный конструктор Date. Чтение legacy сохраняется без выдуманных значений.
+- В contracts.ts сохранены и endTime для профиля, и roleCandidatesSchema. Нет новых миграций/lockfile.
 
-- Реализация ролей и обе оси ревью готовы. Исходные результаты: [implementation](../history/2026-10-21/issue-7-implementation.md), [исправление P3](../history/2026-10-21/issue-7-review-fix.md), [Standards](../history/2026-10-21/reviews/issue-7-standards.md), [Spec](../history/2026-10-21/reviews/issue-7-spec.md). Они относятся к task HEAD, а не к merge e740648.
-- Интегратор разрешил конфликт browser-smoke: сохранил TelegramLogin/collision из #3 и общий browser-runtime из #7; helper получил sessions и перенесённую проверку портов. После merge прошли только node --check трёх scripts и diff --check. Интегратор остановлен лимитом до приёмки/итогового отчёта.
-- Проверить изменённую конфликтом часть, затем совместные роли/авторизацию через HTTP/PostgreSQL, потребителей contracts.ts и оба браузерных runner (smoke + roles) последовательно. Подготовить необходимую сборку один раз для интеграционных портов 55800/55801; остальные уже доказанные unit-наборы повторять только при причине. Точные команды брать из package.json и указанных отчётов.
-- Сохранить интеграционное evidence и только после критериев отметить #7 принятой/закрыть issue. Проверку конфликтной части можно включить в ближайшее пакетное ревью #4/#7, сохранив независимость осей.
+## Следующие задачи
 
-### #4: закончить сохранённую задачу
+Полностью приняты 4 из14 задач: #2/#3/#4/#7. #14 начата; #5 доступна, остальные блокировки неизменны. Полный граф сверён с GitHub при старте; комментариев у #4/#5/#7/#14 не было.
 
-- Полный [checkpoint исполнителя](../../.worktrees/issue-4/docs/history/2026-10-21/issue-4-checkpoint.md) сохранён в WIP snapshot. Первоначальный агент не успел commit; координатор сохранил 26 путей отдельным WIP-коммитом без изменения реализации.
-- Реализованы школьное время, обязательные write-поля, цена 500, единые подписи/fallback, календарь/форма/профиль. Сохраняется чтение legacy. Нет миграций/lockfile changes.
-- Уже подтверждены backend unit 39, e2e 2, frontend 31, typecheck/lint/build затронутых workspace. Финальный последовательный двухтаймзонный browser → PostgreSQL → smoke был запущен, но конечный результат не получен. До нахождения достоверного лога или завершения этих проверок green не заявлять; перечисленные успешные наборы без новой причины не повторять.
-- Завершить недоказанные критерии и риск-ориентированное ревью по действующему плану. STD-002/SPEC-003 ещё open. При merge сохранить endTime + roleCandidatesSchema в contracts.ts и обе цели browser-smoke; новый school-time runner использует старый автономный startup, оценить подключение существующего browser-runtime без изменения сценария.
-- После приёмки/интеграции #4 доступна #5. Независимая #14 также доступна; #5/#14 — возможный следующий параллельный фронт при достаточном бюджете.
+- #14: same-origin weather, серверный OPENWEATHER_API_KEY без попадания в bundle/browser, корректная недоступность, docs/env, controlled transport success/failure, HTTP/browser и bundle scan. STD-001 остаётся open до доказательств. Не менять зависимости/Prisma/shared-контракты. Порты55840/55841, databases.issue14 при необходимости.
+- #5 после принятой #4: запись по актуальному уровню, время до начала, разовая500 на месте без признания оплаты, своевременная/поздняя отмена с точной границей3часов, новая запись после отмены с сохранённой историей. Совместимая legacy миграция, HTTP/PostgreSQL с управляемым временем и browser. Не объявлять готовность по старому smoke, который ещё не проверяет новые правила.
+- Далее #6 → #8/#9, после#5 также#10, затем #11 → #12 → #13 → #15. #15 включает все25сценариев и полный набор. Потом итоговый обзор всегоPR двумя осями.
 
-Полностью завершены 2 из 14 задач (#2/#3); осталось принять 12: #4/#7 уже имеют реализацию, #5/#6/#8–#15 ещё не начаты. Полный граф — в плане. #15 включает 25 сценариев; затем требуется итоговый обзор всего PR.
+Для #11 сохранена [записка о пакетных инвариантах](../history/2026-10-21/package-invariants.md); требования и рекомендации разделены, это не реализация и не новое продуктовое решение.
 
-## Ресурсы и известные особенности
+## Ресурсы
 
-| Ресурс | Где / как использовать |
+| Ресурс | Использование |
 | --- | --- |
-| Тестовые БД | Root .mvp-local/resources.json, поле databases.issueN либо databases.integration. Это локальная отдельная тестовая роль; URL/пароль не печатать и не коммитить. Скрипт setup-db.cjs там же, повторное создание только при необходимости. |
-| Порты | #4: 55640/55641; #7: 55570/55571; интеграция: 55800/55801. BACKEND_URL сборки должен совпадать с backend port; TEST_BACKEND_PORT/TEST_FRONTEND_PORT передаются runner. |
-| Node | C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin добавить в PATH. При недоступности runtime заново определить через load_workspace_dependencies. Системный nvm shim ранее не был настроен; Bun 1.4.2 доступен. |
-| PostgreSQL | Локальная служба postgresql-x64-18, отдельные *_test базы. Docker ранее не запущен. Localhost и git могли требовать require_escalated; отказ sandbox не доказывает остановку службы. Production/development БД не мигрировать. |
-| Jest | NODE_OPTIONS=--experimental-vm-modules для настоящей MIME-проверки. Frontend в Windows hidden worktree: --testMatch '**/test/**/*.test.ts' '**/test/**/*.test.tsx'. |
-| Dependencies | node_modules уже устанавливались изолированно в worktree. Переустановка нужна при отсутствии/изменении зависимостей. При прежнем Bun EBADF/EPERM помогал BUN_TMPDIR в игнорируемом каталоге worktree. |
-| GitHub | Root .mvp-local/gh.ps1 использует существующий Git credential без вывода токена. Portable gh в TEMP удалён при перезапуске; восстановить только если требуется, предпочтительно в постоянном игнорируемом tools-каталоге и обновить локальный wrapper. Connector читал issues, но создание PR возвращало 403. |
-| Навыки | implement-spec/implement/tdd и профильные: C:/Users/User/.agents/skills/<имя>/SKILL.md. Новый порядок проверок из плана приоритетнее старых повторов в навыках. |
+| Тестовые БД | Root `.mvp-local/resources.json`, databases.issueN/integration/legacy, отдельная тестовая роль. Не печатать/не коммитить URL/пароль. setup-db.cjs только при необходимости; test-database.mjs применяет миграции только к локальной *_test. Production/development не мигрировать. |
+| Порты | #4 55640/55641; #7 55570/55571; integration55800/55801; #14 55840/55841. BACKEND_URL сборки должен совпадать с backend. TEST_BACKEND_PORT/TEST_FRONTEND_PORT у runner. |
+| Node | PATH C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin. При недоступности load_workspace_dependencies. Node24.19.0, Bun1.4.2. |
+| Sandbox | Localhost PostgreSQL даёт EACCES, sandbox next build может зависать. С разрешённым доступом checks/build прошли. Отказ sandbox не означает остановку службы. |
+| Jest | NODE_OPTIONS=--experimental-vm-modules для MIME. Frontend hidden worktree: --testMatch '**/test/**/*.test.ts' '**/test/**/*.test.tsx'. |
+| Dependencies | Свои node_modules в worktree; install только при отсутствии/новых входах. При Bun EBADF/EPERM BUN_TMPDIR в игнорируемом каталоге и разрешённый доступ. |
+| GitHub | Connector читает, запись comment вернула403. Локальный игнорируемый `.mvp-local/github-write.ps1` использует существующий Git credential и REST без вывода токена: -IssueNumber N -BodyFile <UTF8 markdown> -Close. Прежний gh.ps1 указывает на исчезнувший TEMP binary; не использовать без восстановления. Git push выполнен штатно. |
+| Логи | `.mvp-local/resume-*.log` для #7, `.mvp-local/issue4-integration-*.log` для объединённых #4/#7; локальные/игнорируются. |
 
-Для будущей #11 сохранена [записка об инвариантах пакета](../history/2026-10-21/package-invariants.md): требования и рекомендации разделены, неоднозначности отмечены; это не новое продуктовое решение и не проверенная реализация.
-
-История #2/#3 — в ../history/2026-10-21/ISSUE-2-INTEGRATION.md и ISSUE-3-INTEGRATION.md; прежний [журнал запуска](../history/2026-10-19/mvp-run.md) — исторический контекст, текущие статусы брать здесь. Исходные snapshots issues и внешние reports остаются в C:/Users/User/.codex/visualizations/2026/10/19/01a154f2-c730-7683-8b89-d9041a09ea37/; первичные критерии — GitHub.
-
-## Поручение для нового чата
-
-> Продолжи GoVolley MVP через implement-spec по текущим AGENTS.md, docs/agents/RESUME.md и development-plan.md. Сначала проверь пятичасовую квоту; остановись не позднее 50%, подготовив checkpoint заранее. Сохрани существующие ветки и WIP, закончи приёмку #7/#4, затем выполняй доступный граф до бюджетной границы. Используй короткие поручения без наследования всей истории, максимум двух исполнителей и проверки по риску из плана. Один существующий draft PR #16; новые PR не создавать.
+Живой Telegram, production, #15 и итоговое ревью всего PR ещё не выполнены. Перед остановкой обновить этот файл финальным состоянием #14, квотой, SHA/dirty, невыполненными проверками и следующим шагом, сохранить WIP и push интеграции. Сброса квоты не ждать.
