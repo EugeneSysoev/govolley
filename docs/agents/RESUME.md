@@ -1,77 +1,55 @@
 # GoVolley MVP: продолжение
 
-## Активный запуск 2026-10-22
-
-Владелец поручил продолжить MVP и разрешил использовать полностью пятичасовой лимит. Для этого запуска прежние пороги 40/45/50% заменены разрешением владельца; контролировать codex/300 и сохранять запас на checkpoint к исчерпанию квоты. Стартовое измерение — 7%. Сбросы квоты не запрошены.
-
-Стартовый root HEAD `e15ac1bc1150434bd8c9e15c18723b527a88f334`, дерево чистое; origin/PR #16 совпадает, draft, base main `0959c948a7a287d06f84728799ebe5b1be68eaad`. GitHub #2/#3/#4/#7 закрыты; #5/#6/#8–#15 открыты. Тела всего графа сверены, у #5/#14 комментариев нет.
-
-- #14 принята: merge `c5ea14696eea2df437c43328697b502856da59a1`, финал ветки `9a4bfe38931f1f1a725b881d180af7e5ac563f8a`. Реальные HTTP/browser success/failure/missing-key и bundle scan 40/0 прошли; обе оси ревью без находок, STD-001 закрыта. [Приёмка](../history/2026-10-22/ISSUE-14-INTEGRATION.md). Worktree чистая и сохранена.
-- #5 принята: merge `f47e88fd1b6fbb99af74e1dc010e20cac63af04f`, код `1069ce2` + ID fix `cca2c29`; обе оси без находок. HTTP/PostgreSQL 35, frontend32/backend39/e2e2/browser9, type/lint/build и 11 миграций empty/legacy прошли. [Приёмка](../history/2026-10-22/ISSUE-5-INTEGRATION.md). Worktree чистая, final `3652f72`; отчёт перенесён в root `8645829`.
-- Book требует `{trainingId, requestId:UUID}`, unbook `{trainingId, bookingId}`; rebook сохраняет новую identity и прежнюю историю. Training→User lock, внедряемый TrainingClock. Legacy CASH/BALANCE не доказывают оплату. Две миграции #5 обязательны; общий owner-only BookingResponseSchema экспортирован из shared-types.
-- #6 и #10 начали отдельные `.worktrees/issue-6` / `.worktrees/issue-10`, `codex/mvp-issue-6` / `codex/mvp-issue-10`, task_base_sha `f47e88fd1b6fbb99af74e1dc010e20cac63af04f`. #6 владеет attendance/payment/audit; #10 notification/outbox. Базы databases.issue6/issue10; порты55960/55961 и56000/56001; миграционные timestamps20261022000600 и20261022001000. Будущие изменения схемы/экспортов объединяет координатор.
-- Последняя квота при старте нового фронта —52% codex/300; запуск продолжается по разрешению владельца. Исторические сведения ниже сохраняют исходную дату и прежние бюджетные пороги.
-
-Обновлено 2026-10-21: реализация остановлена на бюджетном пороге 45% после приёмки #7/#4; после сохранения checkpoint последнее измерение — 47%. #14 сохранена незавершённой, не слита; #5 доступна после принятой #4. Новые задачи после достижения 40% не выдавались.
+Обновлено 2026-10-22. Текущий запуск завершается у исчерпания пятичасовой квоты; последнее измерение перед checkpoint — 98% codex/300. Владелец разрешил использовать полный лимит, поэтому прежние пороги40/45/50% этого запуска не ограничивали. Сброс/кредиты не запрашивались, автоматического ожидания reset нет.
 
 ## Первые действия
 
-1. Прочитать [действующий процесс](development-plan.md), проверить get_usage_limits: bucket `codex`, абсолютный usedPercent окна 300 минут. При >=50% только сохранение/завершение; с 40% не начинать задачи, с 45% checkpoint и остановка. В этом запуске старт 7%, при остановке исполнителя #14 — 45%; это исторический показатель, не текущий датчик.
-2. Сверить git status, worktree list, HEAD и PR #16. Сохранить существующий WIP. Для продуктового запуска один раз PROJECT.md → MVP-SPEC.md; исполнителям только применимые разделы.
-3. Сначала закончить недоказанную реальную HTTP/browser приёмку #14, проверить только изменённую часть и интегрировать после доказательств; затем #5 и доступный граф по бюджету. Обе оси продуктового кода #14 уже готовы. Максимум два исполнителя, fork_turns="none". Полный процесс в development-plan.md.
+1. Прочитать действующий development-plan.md и проверить get_usage_limits, bucket codex, окно300 минут. Учитывать разрешение владельца для этого запуска; при почти исчерпанной квоте только сохранить состояние, не запускать новую реализацию.
+2. Сверить git status, worktree list, HEAD и draft PR#16. Main/production не менять. PROJECT.md → MVP-SPEC.md читаются координатором полностью один раз при новом продуктовом запуске.
+3. Проверить итоговые пакетные ревью #6/#10 и статус GitHub: обе задачи приняты, совместные49 HTTP-проверок и обе оси ревью прошли; доступен фронт #8/#9. Новые задачи в завершающемся запуске не начинались.
 
-## Репозиторий и PR
+## Ветка и принятый код
 
-- Root: C:/Users/User/Desktop/Рабочий стол/Кодинг/Проекты/govolley.
-- Интеграционная ветка codex/govolley-mvp. Принятый кодовый merge #4: `0a2ab89b9d79656a54eacff9e760e5cc7404d471`; следующий документальный HEAD `d173c5edd83159c20c54d274cbec6fad05168b5a` подтверждён push в origin.
-- Финальное сохранение `b58802b7ea2c6cb445b07fba7e1e3b8bc65a4003` также отправлено в origin; последующий коммит только уточняет квоту. Root и worktree #14 после сохранения чистые. Текущий HEAD получить через git.
-- [Единственный PR #16](https://github.com/EugeneSysoev/govolley/pull/16), draft, base main. Ready запрещён до #15 и итогового двухосевого ревью фактического PR diff. Main/production не изменять.
-- Исходный SHA MVP f685aa55f1e8e340401d9f582bf8beef35c3f6e5, baseline 479a127b6827c62599ce08dcb0839b2df5fa11dd. Последняя подтверждённая удалённая base main 0959c948a7a287d06f84728799ebe5b1be68eaad; итоговое ревью включает весь PR, включая прежний локальный baseline.
-- Обычные git worktree под `.worktrees/`, сохранять до завершения. Они не управляются приложением.
+Root: C:/Users/User/Desktop/Рабочий стол/Кодинг/Проекты/govolley.
+Интеграционная ветка codex/govolley-mvp, единственный [draft PR#16](https://github.com/EugeneSysoev/govolley/pull/16), base main0959c948a7a287d06f84728799ebe5b1be68eaad. Ready только после #15 и двухосевого ревью всего фактического diff, включая baseline479a127. Реализация начиналась f685aa55.
 
-| Issue | Ветка / worktree | SHA / статус |
+Текущий код merge#10 `04cbdb4`, после него только runner/doc commits до `454049694a823da7ac6ec1d81ceeb8740f4e5043`; checkpoint-коммит получить через git. Финальный checkpoint отправляется в origin/codex/govolley-mvp; точный SHA и синхронность проверить через git.
+
+| Issue | Ветка / worktree | Состояние и SHA |
 | --- | --- | --- |
-| #2 | codex/mvp-issue-2 / .worktrees/issue-2 | 37093608732623b7d82e8698d7a35da59d9978bc; принята/закрыта, merge dabd0c4a4c3554c0af2734248af73046ebc290ec |
-| #3 | codex/mvp-issue-3 / .worktrees/issue-3 | 8b22bde223d6eaa04f4c7fe6c3ca7119d71a9997; принята/закрыта, merge 5bc32e50132b1d696aa258c7cf995e7c0f4f1853 |
-| #7 | codex/mvp-issue-7 / .worktrees/issue-7 | 4cbdd9525d70d798b22e16cc1c0d41f6fd136607; принята/закрыта, merge e740648f047c302702c687d077e005c77a40dd95 |
-| #4 | codex/mvp-issue-4 / .worktrees/issue-4 | 56cd765a49e8c2cb7ac74209337e932b1767a629; принята/закрыта, merge 0a2ab89; worktree чистая при передаче |
-| #14 | codex/mvp-issue-14 / .worktrees/issue-14 | WIP HEAD 34959e26320f47383cc20259c196cd37ca46f23a, implementation 631ab1641104658e94bb10d275cd3a62fed2f078; task_base_sha d173c5edd83159c20c54d274cbec6fad05168b5a; worktree чистая, не принята/не слита |
+| #2 | codex/mvp-issue-2 / .worktrees/issue-2 | Принята/закрыта, merge dabd0c4 |
+| #3 | codex/mvp-issue-3 / .worktrees/issue-3 | Принята/закрыта, merge5bc32e5 |
+| #4 | codex/mvp-issue-4 / .worktrees/issue-4 | Принята/закрыта, merge0a2ab89 |
+| #7 | codex/mvp-issue-7 / .worktrees/issue-7 | Принята/закрыта, merge e740648 |
+| #14 | codex/mvp-issue-14 / .worktrees/issue-14 | Принята/закрыта, final9a4bfe3, merge c5ea146; STD-001 closed |
+| #5 | codex/mvp-issue-5 / .worktrees/issue-5 | Принята/закрыта, final3652f72, code1069ce2+cca2c29, merge f47e88f |
+| #6 | codex/mvp-issue-6 / .worktrees/issue-6 | Принята, обе оси без находок; final e1808ff, code952c1cc, merge b9fbe79, runner3ac0865→5131030 |
+| #10 | codex/mvp-issue-10 / .worktrees/issue-10 | Принята, обе оси без находок; final0a3e2fc, code1124e5b, merge04cbdb4 |
 
-Task bases #2/#3: f685aa55f1e8e340401d9f582bf8beef35c3f6e5; #7:6cdd0bf2d2a3c79d39ae16eb36a5d4223e624908; #4:a1d670b5dc173c7cf578930ffa9ca9931e5fe510. В существующих worktree инструкции могут быть старыми: policy_source — актуальные AGENTS.md и development-plan.md интеграционного root с явным SHA. Отдельное копирование процессных файлов в продуктовые ветки не требуется.
+Все worktree обычные git worktree, не managed; сохранены, исполнительские деревья чистые. Task bases: #5 e15ac1bc1150434bd8c9e15c18723b527a88f334; #6/#10 f47e88fd1b6fbb99af74e1dc010e20cac63af04f; #14 d173c5e. Актуальные policy_source — root AGENTS/development-plan плюс разрешение владельца на полный лимит. Старые инструкции в worktree не копировать поверх root.
 
-## Принятые #7/#4
+## Доказательства этого запуска
 
-- [Приёмка #7](../history/2026-10-21/ISSUE-7-INTEGRATION.md): на HEAD 4326a53 HTTP/PostgreSQL 23/23, build/typecheck, smoke 8, roles 4, дополнительно frontend contract 11/11. Сохранены TelegramLogin/collision из #3 и общий browser-runtime из #7. Обе оси проверили конфликтную часть без замечаний. GitHub #7 закрыта после evidence-комментария.
-- [Приёмка #4](../history/2026-10-21/ISSUE-4-INTEGRATION.md): на merge 0a2ab89 HTTP/PostgreSQL 26/26, frontend contracts/API/SSR 20/20, build/typecheck, school-time browser оба timezone и smoke 8. School-time переведён на общий runtime, UUID fixtures и Promise.all response/click сохранены. STD-R4-001 проверен автором и закрыт. STD-002/SPEC-003 закрыты по исходным критериям, GitHub#4 закрыта после evidence.
-- Исходные успешные unit/lint/e2e задачи переиспользованы со snapshot 0e4c9eb и датой из [checkpoint](../history/2026-10-21/issue-4-checkpoint.md)/[completion](../history/2026-10-21/issue-4-completion.md). Без новой причины повторять не нужно.
-- Shared `schoolDateKey`, `schoolDateIso`, `schoolTimeInstant`, `SCHOOL_TIME_ZONE` экспортируются из shared-types. Для #5/#11 использовать schoolTimeInstant(date,startTime), не локальный конструктор Date. Чтение legacy сохраняется без выдуманных значений.
-- В contracts.ts сохранены и endTime для профиля, и roleCandidatesSchema. Нет новых миграций/lockfile.
+- [Приёмка #14](../history/2026-10-22/ISSUE-14-INTEGRATION.md): настоящий HTTP/browser success/failure/missing key, same-origin, ключа нет в URLs/HTML/40 файлах bundle, page errors0. Исправлен только Windows preload path теста. Продуктовые и changed-part Standards/Spec0 находок; STD-001 закрыта.
+- [Приёмка #5](../history/2026-10-22/ISSUE-5-INTEGRATION.md): HTTP35, frontend32/backend unit39/e2e2/browser9, типы/lint/build, empty/legacy11 миграций. Standards/Spec0. Новые записи cash500 UNPAID, обязательные уровень/время/место; точная граница3ч, новая история rebook и защита старых повторов.
+- [Совместная приёмка #6/#10](../history/2026-10-22/ISSUES-6-10-INTEGRATION.md): собственные результаты задач и пакетные ревью. После объединения Prisma relations/shared exports на merge04cbdb4:13 миграций, generate, shared build, backend type/build, HTTP49/49 в5 наборах, frontend production build с типами — PASS. Повтор всего suite не требуется из-за нового чата.
+- Отчёты [#6](../history/2026-10-22/issue-6-completion.md) и [#10](../history/2026-10-22/issue-10-completion.md) содержат команды/исходныеSHA, browser, миграции. Полная приёмка #15 и живой Telegram ещё не выполнены.
 
-## Следующие задачи
+## Новые контракты и следующий фронт
 
-Полностью приняты 4 из 14 задач: #2/#3/#4/#7. #14 начата; #5 доступна, остальные блокировки неизменны. Полный граф сверён с GitHub при старте; комментариев у #4/#5/#7/#14 не было.
-
-- #14: same-origin weather, серверный OPENWEATHER_API_KEY без попадания в bundle/browser, корректная недоступность, docs/env, controlled transport success/failure, HTTP/browser и bundle scan. STD-001 остаётся open до доказательств. Не менять зависимости/Prisma/shared-контракты. Порты55840/55841, databases.issue14 при необходимости.
-- Реализация #14 в `631ab164`: route/widget, docs/env и 8 целевых green. Независимые [Standards](../history/2026-10-21/reviews/issue-14-standards.md) и [Spec](../history/2026-10-21/reviews/issue-14-spec.md) без находок, сохранены коммитом `e9d547a`; последующие weather-only runner/fixture ещё не покрыты этим ревью.
-- Финал #14: frontend typecheck, lint (0 ошибок, 7 прежних warnings), production build успешны; backend/shared сборки и 9 миграций отдельной issue14 тестовой БД для runtime успешны. Client bundle scan: 40 файлов, 0 совпадений ключа. HTTP/browser/network **не доказаны**: Next child завершился до готовности и в sandbox, и с разрешённым доступом. На 45% диагностика остановлена, #14 и STD-001 остаются open.
-- Следующий точный шаг #14: прочитать [task report](../../.worktrees/issue-14/docs/history/2026-10-21/issue-14-implementation.md), вывести stderr/лог запуска собственного Next процесса (общий browser-runtime сейчас скрывает stdio), воспроизвести причину `Next.js exited before becoming ready` в `node scripts/weather.browser.mjs` с отдельной databases.issue14. Проверить в том числе путь/кавычки preload NODE_OPTIONS. Исправить только подтверждённый сбой и завершить controlled provider success/failure/missing-key через настоящий HTTP/browser. Не повторять уже green без изменения входов. Затем проверить новый runner/fixture по изменённой части, принять и слить. WIP SHA — `34959e26320f47383cc20259c196cd37ca46f23a`.
-- #5 в этом запуске не начата: при 37% принято решение сохранить запас для завершения #14, независимого ревью и checkpoint. После достижения 40% новые задачи не выдавались.
-- #5 после принятой #4: запись по актуальному уровню, время до начала, разовая 500 на месте без признания оплаты, своевременная/поздняя отмена с точной границей 3 часов, новая запись после отмены с сохранённой историей. Совместимая legacy миграция, HTTP/PostgreSQL с управляемым временем и browser. Не объявлять готовность по старому smoke, который ещё не проверяет новые правила.
-- Далее #6 → #8/#9, после #5 также#10, затем #11 → #12 → #13 → #15. #15 включает все 25 сценариев и полный набор. Потом итоговый обзор всего PR двумя осями.
-
-Для #11 сохранена [записка о пакетных инвариантах](../history/2026-10-21/package-invariants.md); требования и рекомендации разделены, это не реализация и не новое продуктовое решение.
+- HTTP book `{trainingId, requestId:UUID}`, unbook `{trainingId, bookingId}`. Старый ключ не создаёт rebook; другой ключ при активной записи409. Booking.id неизменяемая identity конкретной записи. TrainingResponse выдаёт только собственный активный bookingId либо null. Training→User lock сохраняется; TrainingClock управляет временем.
+- Booking.kind LEGACY/SINGLE_CASH; legacy CASH/BALANCE не доказывают оплату. Cash500 сохраняет условие, receipt фиксируется отдельно. AttendanceStatus UNMARKED/ATTENDED/NO_SHOW и nullable cashReceived; проекция PAID/UNPAID/UNRECORDED. BookingAudit хранит actor/requestId/field/old/new/reason/time; повтор после исправления не переписывает его. StaffParticipantsModule отдельный, доступ обеим ролям.
+- NotificationsModule создаёт intent внутри booking transaction. Delivery driver отдельно от бизнес-команд; snapshot сообщения, durable lease/CAS/повтор. Live transport/ticker только BotModule; HTTP/browser tests не импортируют живой бот. Защищённый экран /staff/notifications. Внешняя доставка at-least-once при неоднозначном результате.
+- Сначала #8 (уровень, сохранение записей, история, нельзя обойти обязательную анкету) и #9 (пакеты5/10, оплата на месте, история/остатки); затем #11 зависит от #9 и принятой #10. Дальше #12→#13→#15. При пакетных последствиях attendance требуется единый протокол account/package locks: прочитать [инварианты #11](../history/2026-10-21/package-invariants.md); рекомендации не готовая реализация.
+- Shared schoolDateKey/schoolDateIso/schoolTimeInstant/SCHOOL_TIME_ZONE использовать повторно. School time Asia/Bangkok; не создавать дату начала локальным Date constructor.
+- Штатные timestamps миграций: #5 20261022000000/000001; #6 20261022000600; #10 20261022001000. Старые миграции явно используют public: для empty/legacy нужны отдельные БД, не схемы. Reset/drop не выполнялись.
 
 ## Ресурсы
 
-| Ресурс | Использование |
-| --- | --- |
-| Тестовые БД | Root `.mvp-local/resources.json`, databases.issueN/integration/legacy, отдельная тестовая роль. Не печатать/не коммитить URL/пароль. setup-db.cjs только при необходимости; test-database.mjs применяет миграции только к локальной *_test. Production/development не мигрировать. |
-| Порты | #4 55640/55641; #7 55570/55571; integration 55800/55801; #14 55840/55841. BACKEND_URL сборки должен совпадать с backend. TEST_BACKEND_PORT/TEST_FRONTEND_PORT у runner. |
-| Node | PATH C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin. При недоступности load_workspace_dependencies. Node 24.19.0, Bun 1.4.2. |
-| Sandbox | Localhost PostgreSQL даёт EACCES, sandbox next build может зависать. С разрешённым доступом checks/build прошли. Отказ sandbox не означает остановку службы. |
-| Jest | NODE_OPTIONS=--experimental-vm-modules для MIME. Frontend hidden worktree: --testMatch '**/test/**/*.test.ts' '**/test/**/*.test.tsx'. |
-| Dependencies | Свои node_modules в worktree; install только при отсутствии/новых входах. При Bun EBADF/EPERM BUN_TMPDIR в игнорируемом каталоге и разрешённый доступ. |
-| GitHub | Connector читает, запись comment вернула403. Локальный игнорируемый `.mvp-local/github-write.ps1` использует существующий Git credential и REST без вывода токена: -IssueNumber N -BodyFile <UTF8 markdown> -Close. Прежний gh.ps1 указывает на исчезнувший TEMP binary; не использовать без восстановления. Git push выполнен штатно. |
-| Логи | `.mvp-local/resume-*.log` для #7, `.mvp-local/issue4-integration-*.log` для объединённых #4/#7; локальные/игнорируются. |
+- Root `.mvp-local/resources.json`: тестовая роль и databases.issue2–issue15/integration/legacy, issue5_empty/issue5_legacy. URL/пароль не печатать/не коммитить. Дополнительные БД #6 в собственной `.worktrees/issue-6/.mvp-local/participants-resources.json`; #10 см. report и собственные локальные файлы. Все только loopback *_test, production/development не мигрировать.
+- Порты: integration55800/55801; #14 55840/55841; #5 55950/55951; #6 55960/55961; #10 56000/56001. BACKEND_URL build должен совпадать с runtime. Browser runner принимает TEST_BACKEND_PORT/TEST_FRONTEND_PORT.
+- Node24.19.0/Bun1.4.2: PATH C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin. У worktree свои dependencies. Sandbox local PostgreSQL/Next/Prisma могут давать EACCES/EPERM: разрешённые проверки прошли. Frontend hidden worktree Jest testMatch задавать явно; NODE_OPTIONS experimental-vm-modules для backend MIME tests.
+- Root `.mvp-local/integrate-610.ps1` и integration-610-*.log сохраняют совместную проверку. Штатные команды из package.json. Не повторять все зелёные проверки без изменённых входов.
+- GitHub connector читает, запись403. Root `.mvp-local/github-write.ps1` использует уже настроенный credential без вывода токена: -IssueNumber N -BodyFile UTF8file -Close или -AssignTo. Старый gh.ps1 указывает на исчезнувший binary. Git push штатный.
 
-Живой Telegram, production, #15 и итоговое ревью всего PR ещё не выполнены. Worktree сохранены. Запуск остановлен по бюджету; сброса квоты автоматически не ждать.
+Следующий запуск начинает с измерения квоты и проверки окончательного checkpoint/push. MVP ещё не готов, PR#16 остаётся draft, main/production не менялись.
