@@ -10,7 +10,11 @@
 
 ### STD-001 — P2: OpenWeather API-ключ попадает в браузер
 
-- Статус: `open`.
+- Статус: `closed` — 2026-10-22, принята #14, merge `c5ea146`.
+- Evidence: [интеграционная приёмка #14](../history/2026-10-22/ISSUE-14-INTEGRATION.md):
+  реальные HTTP/browser success/failure/missing-key, same-origin, 0 page errors,
+  отсутствие ключа в browser URLs/HTML и 40 клиентских файлах; unit/component 8/8,
+  typecheck/lint/build, обе оси продуктового и changed-part ревью без находок.
 - Задача: [#14](https://github.com/EugeneSysoev/govolley/issues/14).
 - Основание: документированное правило README.md:19 — «В браузер попадает только публичный MapTiler key».
 - Код: `apps/frontend/components/navbar/weather-widget.tsx:16–20`.

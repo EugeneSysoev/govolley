@@ -6,7 +6,7 @@
 
 Стартовый root HEAD `e15ac1bc1150434bd8c9e15c18723b527a88f334`, дерево чистое; origin/PR #16 совпадает, draft, base main `0959c948a7a287d06f84728799ebe5b1be68eaad`. GitHub #2/#3/#4/#7 закрыты; #5/#6/#8–#15 открыты. Тела всего графа сверены, у #5/#14 комментариев нет.
 
-- #14 продолжает существующую `.worktrees/issue-14` с исходным task_base_sha и WIP 34959e2: завершить реальную HTTP/browser приёмку, проверить изменённые runner/fixture, затем принять.
+- #14 принята: merge `c5ea14696eea2df437c43328697b502856da59a1`, финал ветки `9a4bfe38931f1f1a725b881d180af7e5ac563f8a`. Реальные HTTP/browser success/failure/missing-key и bundle scan 40/0 прошли; обе оси ревью без находок, STD-001 закрыта. [Приёмка](../history/2026-10-22/ISSUE-14-INTEGRATION.md). Worktree чистая и сохранена.
 - #5 начата в `.worktrees/issue-5`, `codex/mvp-issue-5`, task_base_sha `e15ac1bc1150434bd8c9e15c18723b527a88f334`. Владелец Prisma/shared booking/contracts — исполнитель #5; ресурсы/порты изолированы от #14.
 - Следующий зависимый фронт после приёмки #5: #6 и #10. Исторические сведения ниже сохраняют исходную дату и прежние бюджетные пороги.
 
