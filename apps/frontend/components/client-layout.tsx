@@ -12,14 +12,13 @@ import AuthGuard from "@/components/auth/auth-guard";
 
 // Определяем, была ли страница перезагружена (F5/CMD+R)
 const wasPageReloaded = (): boolean => {
-  if (typeof performance === "undefined") return false;
+  if (typeof performance === "undefined" || typeof performance.getEntriesByType !== "function") return false;
   const navEntries = performance.getEntriesByType("navigation");
   if (navEntries.length > 0) {
-    const nav = navEntries[0] as PerformanceNavigationTiming;
-    return nav.type === "reload";
+    const nav = navEntries[0];
+    return "type" in nav && nav.type === "reload";
   }
-  // fallback для старых браузеров
-  return (performance as any).navigation?.type === 1;
+  return false;
 };
 
 export default function ClientLayout({
@@ -34,6 +33,11 @@ export default function ClientLayout({
 
   // Эффект для инициализации интро (только на клиенте)
   useEffect(() => {
+    if (pathname !== '/' && hasInitialized.current) {
+      setIntroFinished(true);
+      sessionStorage.setItem('hasSeenIntro', 'true');
+      return;
+    }
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
@@ -81,27 +85,27 @@ export default function ClientLayout({
     };
   }, [introFinished, pathname]);
 
-  const handleIntroComplete = () => {
+  const handleIntroComplete = useCallback(() => {
     setIntroFinished(true);
     sessionStorage.setItem("hasSeenIntro", "true");
-  };
+  }, []);
 
   const showIntro = !introFinished && pathname === "/";
 
   return (
     <NextAuthProvider>
       <AuthGuard>
-        <GlobalBackground introFinished={introFinished} />
+        <GlobalBackground introFinished={!showIntro} />
         <AnimatePresence mode="wait">
           {showIntro && <IntroSequence onComplete={handleIntroComplete} />}
         </AnimatePresence>
         <div
           className={`relative min-h-dvh transition-opacity duration-1000 ${
-            introFinished ? "opacity-100 visible" : "opacity-0 invisible"
+            !showIntro ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
           style={{ zIndex: 10 }}
         >
-          <Navbar introFinished={introFinished} isScrolled={isScrolled} />
+          <Navbar introFinished={!showIntro} isScrolled={isScrolled} />
           <main className="relative grow">{children}</main>
           <Footer />
         </div>

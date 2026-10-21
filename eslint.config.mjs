@@ -8,9 +8,9 @@ export default ts.config(
     ignores: [
       "**/node_modules/**",
       "**/.bun/**",
-      "dist/**",
-      ".next/**",
-      "out/**"
+      "**/dist/**",
+      "**/.next/**",
+      "**/out/**"
     ],
   }
 );

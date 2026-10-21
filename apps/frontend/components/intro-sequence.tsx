@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   motion,
-  Transition,
   useMotionValue,
   useTransform,
   animate,
@@ -48,7 +47,8 @@ export default function IntroSequence({ onComplete }: IntroProps) {
       { s: "end", t: 3600 },
     ];
 
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let morph: ReturnType<typeof animate> | undefined;
 
     timeline.forEach(({ s, t }) => {
       const timer = setTimeout(() => {
@@ -56,31 +56,16 @@ export default function IntroSequence({ onComplete }: IntroProps) {
         else {
           setStep(Number(s));
           if (s === 6) {
-            animate(morphProgress, 1, { duration: 0.4, ease: "easeOut" });
+            morph = animate(morphProgress, 1, { duration: 0.4, ease: "easeOut" });
           }
         }
-      }, t as number);
+      }, t);
       timers.push(timer);
     });
 
-    return () => timers.forEach(clearTimeout);
+    return () => { timers.forEach(clearTimeout); morph?.stop(); };
   }, [onComplete, morphProgress]);
 
-  const pulseKeyframes = {
-    filter: [
-      "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
-      "drop-shadow(0 0 15px rgba(201, 237, 74, 1))",
-      "drop-shadow(0 0 8px rgba(201, 237, 74, 0.7))",
-      "drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5))",
-    ],
-    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-  };
-
-  const pulseTransition: Transition = {
-    duration: 2,
-    repeat: Infinity,
-    ease: "easeInOut",
-  };
   const explosionEase = [0.7, 0, 0.3, 1] as [number, number, number, number];
 
   return (

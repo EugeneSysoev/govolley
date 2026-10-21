@@ -10,6 +10,11 @@ import {
   forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { schoolDateKey } from '@govolley/shared-types';
+import { formatSchoolDate, SCHOOL_TIME_LABEL } from '@/lib/training-display';
+
+// A stable midday instant keeps UTC arithmetic on the same Bangkok calendar day.
+const calendarDay = (value: Date) => new Date(`${schoolDateKey(value)}T12:00:00Z`);
 
 interface SwipeCalendarProps {
   isOpen: boolean;
@@ -20,7 +25,7 @@ interface SwipeCalendarProps {
 
 interface DayItemData {
   date: Date;
-  timestamp: number;
+  timestamp: string;
   day: number;
   weekday: string;
   key: string;
@@ -31,19 +36,19 @@ const generateDateRange = (
   daysRange: number,
 ): DayItemData[] => {
   const dates: DayItemData[] = [];
-  const start = new Date(centerDate);
-  start.setDate(start.getDate() - daysRange);
+  const start = calendarDay(centerDate);
+  start.setUTCDate(start.getUTCDate() - daysRange);
 
   for (let i = 0; i <= daysRange * 2; i++) {
     const d = new Date(start);
-    d.setDate(start.getDate() + i);
+    d.setUTCDate(start.getUTCDate() + i);
 
     dates.push({
       date: d,
-      timestamp: d.setHours(0, 0, 0, 0),
-      day: d.getDate(),
-      weekday: d.toLocaleDateString("ru-RU", { weekday: "short" }),
-      key: d.toISOString(),
+      timestamp: schoolDateKey(d),
+      day: d.getUTCDate(),
+      weekday: formatSchoolDate(d, { weekday: "short" }),
+      key: schoolDateKey(d),
     });
   }
 
@@ -60,6 +65,8 @@ const DayItem = memo(
     return (
       <button
         ref={ref}
+        aria-label={item.key}
+        aria-pressed={isActive}
         onClick={onClick}
         className={`
             relative shrink-0 w-20 h-20 rounded-3xl flex flex-col items-center justify-center
@@ -94,20 +101,19 @@ export function SwipeCalendar({
 
   const [dates] = useState(() => generateDateRange(new Date(), 180));
   const [activeIndex, setActiveIndex] = useState(0);
-  const [tempSelected, setTempSelected] = useState<Date>(selectedDate);
+  const [tempSelected, setTempSelected] = useState<Date>(() => calendarDay(selectedDate));
 
   /* ===== months ===== */
   const uniqueMonths = useMemo(() => {
     const map = new Map();
 
     dates.forEach((d) => {
-      const key = `${d.date.getFullYear()}-${d.date.getMonth()}`;
+      const key = `${d.date.getUTCFullYear()}-${d.date.getUTCMonth()}`;
       if (!map.has(key)) {
         map.set(key, {
-          year: d.date.getFullYear(),
-          month: d.date.getMonth(),
-          label: d.date
-            .toLocaleDateString("ru-RU", {
+          year: d.date.getUTCFullYear(),
+          month: d.date.getUTCMonth(),
+          label: formatSchoolDate(d.date, {
               month: "long",
               year: "numeric",
             })
@@ -123,13 +129,13 @@ export function SwipeCalendar({
   useEffect(() => {
     if (!isOpen) return;
 
-    const ts = new Date(selectedDate).setHours(0, 0, 0, 0);
+    const ts = schoolDateKey(selectedDate);
 
     const idx = dates.findIndex((d) => d.timestamp === ts);
 
     if (idx !== -1) {
       setActiveIndex(idx);
-      setTempSelected(selectedDate);
+      setTempSelected(calendarDay(selectedDate));
     }
   }, [isOpen, selectedDate, dates]);
 
@@ -157,7 +163,7 @@ export function SwipeCalendar({
   const goToMonth = useCallback(
     (year: number, month: number) => {
       const index = dates.findIndex(
-        (d) => d.date.getFullYear() === year && d.date.getMonth() === month,
+        (d) => d.date.getUTCFullYear() === year && d.date.getUTCMonth() === month,
       );
 
       if (index !== -1) {
@@ -169,7 +175,7 @@ export function SwipeCalendar({
   );
 
   const goToPrevMonth = useCallback(() => {
-    const key = `${tempSelected.getFullYear()}-${tempSelected.getMonth()}`;
+    const key = `${tempSelected.getUTCFullYear()}-${tempSelected.getUTCMonth()}`;
     const idx = uniqueMonths.findIndex((m) => `${m.year}-${m.month}` === key);
 
     if (idx > 0) {
@@ -179,7 +185,7 @@ export function SwipeCalendar({
   }, [tempSelected, uniqueMonths, goToMonth]);
 
   const goToNextMonth = useCallback(() => {
-    const key = `${tempSelected.getFullYear()}-${tempSelected.getMonth()}`;
+    const key = `${tempSelected.getUTCFullYear()}-${tempSelected.getUTCMonth()}`;
     const idx = uniqueMonths.findIndex((m) => `${m.year}-${m.month}` === key);
 
     if (idx !== -1 && idx < uniqueMonths.length - 1) {
@@ -188,7 +194,7 @@ export function SwipeCalendar({
     }
   }, [tempSelected, uniqueMonths, goToMonth]);
 
-  const activeTs = tempSelected.setHours(0, 0, 0, 0);
+  const activeTs = schoolDateKey(tempSelected);
 
   /* ===================== RENDER ===================== */
 
@@ -217,7 +223,8 @@ export function SwipeCalendar({
                 </button>
 
                 <select
-                  value={`${tempSelected.getFullYear()}-${tempSelected.getMonth()}`}
+                  aria-label="Месяц по Пхукету"
+                  value={`${tempSelected.getUTCFullYear()}-${tempSelected.getUTCMonth()}`}
                   onChange={(e) => {
                     const [year, month] = e.target.value.split("-").map(Number);
                     goToMonth(year, month);
@@ -275,7 +282,7 @@ export function SwipeCalendar({
             {/* actions */}
             <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
               <span className="text-white/40 text-xs">
-                Потяните для навигации
+                {SCHOOL_TIME_LABEL}. Потяните для навигации
               </span>
               <button
                 onClick={() => {

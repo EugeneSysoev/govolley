@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useMemo, memo } from "react";
+import Link from "next/link";
 
 const AuthGuard = memo(({ children }: { children: React.ReactNode }) => {
   const { data: session, status } = useSession();
@@ -11,12 +12,12 @@ const AuthGuard = memo(({ children }: { children: React.ReactNode }) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const isNotSet = useMemo(() => {
-    const user = session?.user as any;
+    const user = session?.user;
     return !user?.skillLevel || user.skillLevel === "NOT_SET";
   }, [session?.user]);
 
   useEffect(() => {
-    if (status === "loading" || isRedirecting) return;
+    if (status === "loading" || isRedirecting || session?.error) return;
 
     if (status === "authenticated" && session?.user) {
       if (isNotSet && pathname !== "/onboarding") {
@@ -33,6 +34,11 @@ const AuthGuard = memo(({ children }: { children: React.ReactNode }) => {
     setIsRedirecting(false);
   }, [pathname]);
 
+  if (session?.error === 'SessionExpired' && pathname !== '/auth/signin') {
+    return <div className="min-h-screen flex items-center justify-center">
+      <Link href="/auth/signin">Сессия истекла. Войдите заново</Link>
+    </div>;
+  }
   if (status === "loading" || isRedirecting) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">

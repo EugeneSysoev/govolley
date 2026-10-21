@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ProfileFormData } from "./profile-types";
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:3000/api";
+import type { ProfileUser, ProfileFormData } from "./profile-types";
+import { formatSchoolDate, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 interface ProfileHeaderProps {
-  user: any;
-  accessToken?: string;
+  user?: ProfileUser;
   isEditing: boolean;
   formData: ProfileFormData;
   setFormData: (data: ProfileFormData) => void;
@@ -21,7 +17,6 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({
   user,
-  accessToken,
   isEditing,
   formData,
   setFormData,
@@ -30,46 +25,7 @@ export function ProfileHeader({
   onAvatarChange,
   fileInputRef,
 }: ProfileHeaderProps) {
-  const [joinDate, setJoinDate] = useState<string>("");
-
-  const setDate = useCallback((createdAt: string) => {
-    const date = new Date(createdAt);
-    if (!isNaN(date.getTime())) {
-      setJoinDate(
-        date
-          .toLocaleDateString("ru-RU", { month: "short", year: "numeric" })
-          .replace(" г.", ""),
-      );
-    } else {
-      setJoinDate("");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (user?.createdAt) {
-      setDate(user.createdAt);
-      return;
-    }
-
-    if (!user?.id || !accessToken) return;
-
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    fetch(`${BACKEND_URL}/users/profile`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      signal,
-    })
-      .then((res) => res.json())
-      .then((profile) => {
-        if (profile?.createdAt) setDate(profile.createdAt);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") console.error(err);
-      });
-
-    return () => controller.abort();
-  }, [user?.createdAt, user?.id, accessToken, setDate]);
+  const joinDate = user?.createdAt ? formatSchoolDate(user.createdAt, { month: 'short', year: 'numeric' }).replace(' г.', '') : '';
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
@@ -139,7 +95,7 @@ export function ProfileHeader({
               telegram @{user?.username}
             </p>
             <p className="text-[clamp(0.6rem,1.5vw,0.7rem)] text-white/40 font-mono uppercase tracking-[0.2em] mt-4">
-              В GoVolley с {joinDate || "недавно"}
+              В GoVolley с {joinDate || "недавно"} · {SCHOOL_TIME_LABEL}
             </p>
           </>
         )}

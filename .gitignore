@@ -30,7 +30,6 @@ bun-debug.log*
 .env.*.local
 
 # Prisma
-/apps/backend/prisma/migrations/migration_lock.toml
 
 # IDE и системные файлы
 .idea/

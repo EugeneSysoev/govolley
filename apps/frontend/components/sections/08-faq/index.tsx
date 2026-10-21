@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { FAQ_DATA } from "./constants";
 import { FaqItem } from "./faq-item";
 import PremiumWordPullUp from "@/components/magicui/word-pull-up";

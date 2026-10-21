@@ -1,9 +1,15 @@
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { backendApiUrl } from '@/lib/backend-config';
+import { readResponse } from '@/lib/api';
+import { trainingSchema } from '@/lib/contracts';
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import GlobalBackground from "@/components/background/global-background";
 import { BookingSidebar } from "./booking-sidebar";
 import { TrainingLocationView } from "./training-details-view";
 import { LOCATIONS } from "../../locations/constants";
+import { locationLabel } from '@/lib/training-display';
 
 export default async function TrainingDetailPage({
   params,
@@ -12,17 +18,14 @@ export default async function TrainingDetailPage({
 }) {
   const { id } = await params;
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/training/${id}`,
-    { cache: "no-store" },
-  );
-
-  if (!response.ok) notFound();
-  const training = await response.json();
-
-  const locationInfo = LOCATIONS.find(
-    (l) => l.name.toLowerCase() === training.location.toLowerCase(),
-  );
+  if (!/^[1-9]\d*$/.test(id)) notFound();
+  const session = await getServerSession(authOptions);
+  const response = await fetch(backendApiUrl(`/training/${id}`), {
+    cache: 'no-store', headers: session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {},
+  });
+  if (response.status === 404) notFound();
+  const training = await readResponse(response, trainingSchema);
+  const locationInfo = LOCATIONS.find((location) => location.name.toLowerCase() === training.location?.toLowerCase());
 
   return (
     <div className="relative text-white pt-30 lg:pt-40 overflow-hidden">
@@ -51,7 +54,7 @@ export default async function TrainingDetailPage({
         <div className="grid lg:grid-cols-12 gap-6 lg:gap-10 lg:px-20 items-stretch">
           <div className="lg:col-span-7 h-full order-1">
             <TrainingLocationView
-              name={training.location}
+              name={locationLabel(training.location)}
               image={locationInfo?.image}
               googleUrl={locationInfo?.googleUrl}
               fullHeight
@@ -62,6 +65,7 @@ export default async function TrainingDetailPage({
             <BookingSidebar training={training} />
           </aside>
         </div>
+        {training.description && <p className="whitespace-pre-wrap text-white/80 my-8 lg:px-20">{training.description}</p>}
       </div>
     </div>
   );

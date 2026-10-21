@@ -18,7 +18,7 @@ export function BookingButton({
   const router = useRouter();
 
   const handleClick = () => {
-    if (isFull || isLoading) return;
+    if (isLoading) return;
     router.push(`/training/${trainingId}`);
   };
 
@@ -28,7 +28,7 @@ export function BookingButton({
         <MagneticButton>
           <motion.button
             onClick={handleClick}
-            disabled={isFull || isLoading}
+            disabled={isLoading}
             whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 22 }}
@@ -59,7 +59,7 @@ export function BookingButton({
                 ${isLoading ? "opacity-0" : "opacity-100"}
               `}
             >
-              {isFull ? "Мест нет" : "Выбрать тренировку"}
+              {isFull ? "Посмотреть детали" : "Выбрать тренировку"}
             </span>
 
             {/* LOADER */}

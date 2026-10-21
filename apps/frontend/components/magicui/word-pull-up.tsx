@@ -12,18 +12,6 @@ interface WordPullUpProps {
   wrapperDelay?: number;
 }
 
-// Статические variants (не пересоздаются)
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1, // будет переопределено через delayMultiple
-      delayChildren: 0,
-    },
-  },
-};
-
 const wordVariants: Variants = {
   hidden: { y: "110%", opacity: 0 },
   visible: {

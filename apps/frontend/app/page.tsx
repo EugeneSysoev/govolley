@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { Suspense } from "react";
 import Hero from "@/components/sections/01-hero";
 import Features from "@/components/sections/02-features";
 import TheorySection from "@/components/sections/03-theory";
@@ -8,14 +8,12 @@ import DictionarySection from "@/components/sections/04-dictionary";
 import CoachSection from "@/components/sections/05-coach/index";
 import PricingSection from "@/components/sections/07-price/index";
 import FaqSection from "@/components/sections/08-faq/index";
-import Footer from "@/components/footer";
 import AboutCreatorSection from "@/components/sections/06-about-creator";
 import SectionDivider from "@/components/section-divider";
 import SecretLanguage from "@/components/sections/03-theory/secret-language";
 import TextScrollTransition from "@/components/ticker";
 
 export default function Home() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
     <main className="min-h-screen bg-transparent text-brand-dark selection:bg-brand-dark selection:text-brand-lime font-body">

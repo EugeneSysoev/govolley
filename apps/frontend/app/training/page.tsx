@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -10,10 +10,12 @@ import { TrainingCard } from "./training-card";
 import { TrainingModal } from "./training-modal";
 import { trainingApi } from "./api";
 import { Training } from "./types";
+import { schoolDateKey } from '@govolley/shared-types';
+import { formatSchoolDate, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 export default function TrainingPage() {
   const { data: session, status } = useSession();
-  const userRole = session?.user?.role as string | undefined;
+  const userRole = session?.user?.role;
 
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -37,26 +39,26 @@ export default function TrainingPage() {
   }, [selectedDate]);
 
   // Функция загрузки тренировок (была удалена – восстанавливаем)
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     try {
-      const data = await trainingApi.getAll();
+      const data = await trainingApi.getAll(session?.accessToken);
       setTrainings(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to refresh data:", err);
       setTrainings([]);
     }
-  };
+  }, [session?.accessToken]);
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    void refreshData();
+  }, [refreshData]);
 
   // Фильтрация тренировок по выбранной дате
   const filteredTrainings = useMemo(() => {
     if (!Array.isArray(trainings)) return [];
     return trainings.filter((t) => {
       if (!t.date) return false;
-      return new Date(t.date).toDateString() === selectedDate.toDateString();
+      return schoolDateKey(t.date) === schoolDateKey(selectedDate);
     });
   }, [selectedDate, trainings]);
 
@@ -68,16 +70,16 @@ export default function TrainingPage() {
   const handleDelete = async (id: number) => {
     if (confirm("Удалить эту тренировку?")) {
       try {
-        await trainingApi.delete(id);
+        await trainingApi.delete(id, session?.accessToken);
         await refreshData();
-      } catch (err) {
+      } catch {
         alert("Ошибка при удалении");
       }
     }
   };
 
   // Форматирование выбранной даты для отображения
-  const formattedDate = selectedDate.toLocaleDateString("ru-RU", {
+  const formattedDate = formatSchoolDate(selectedDate, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -134,6 +136,7 @@ export default function TrainingPage() {
               <span className="text-white font-light text-lg tracking-tight">
                 {formattedDate}
               </span>
+              <span className="text-white/50 text-xs">{SCHOOL_TIME_LABEL}</span>
             </div>
 
             <button

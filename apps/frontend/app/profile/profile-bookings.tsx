@@ -1,8 +1,10 @@
 "use client";
+import Link from "next/link";
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Calendar, Clock, MapPin } from "lucide-react";
 import { Booking } from "./profile-types";
+import { formatSchoolDate, locationLabel, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 interface ProfileBookingsProps {
   bookings: Booking[];
@@ -14,7 +16,7 @@ const formatDate = (dateString: string): string => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Дата неизвестна";
-    return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+    return formatSchoolDate(date, { day: "numeric", month: "long" });
   } catch {
     return "Дата неизвестна";
   }
@@ -62,6 +64,7 @@ export function ProfileBookings({
         </span>
       </div>
 
+      <p className="text-white/50 text-xs mb-4">{SCHOOL_TIME_LABEL}</p>
       <div className="grid grid-cols-1 gap-4">
         {displayedBookings.map((booking) => {
           const { training, status } = booking;
@@ -75,7 +78,7 @@ export function ProfileBookings({
             >
               <div className="flex-1">
                 <h4 className="text-[clamp(1.2rem,2vw,1.8rem)] font-bold text-white mb-2 tracking-wide">
-                  {training?.title || "Без названия"}
+                  <Link href={`/training/${training.id}`}>{training.title || "Без названия"}</Link>
                 </h4>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[clamp(0.7rem,1.5vw,0.8rem)] font-mono uppercase tracking-widest text-white/40">
                   <div className="flex items-center gap-1">
@@ -85,18 +88,27 @@ export function ProfileBookings({
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    <span>{training?.startTime || "—"}</span>
+                    <span>{training.startTime} — {training.endTime}</span>
                   </div>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <div className="flex items-center gap-1 truncate">
                     <MapPin className="w-3 h-3 shrink-0" />
                     <span className="truncate max-w-37.5 sm:max-w-none">
-                      {training?.location || "—"}
+                      {locationLabel(training?.location)}
                     </span>
                   </div>
                 </div>
+                <p className="text-white/60 text-xs mt-3">
+                  {booking.kind === 'SINGLE_CASH' ? `Разовая запись: ${booking.cashPrice} ฿ на месте` : 'Прежняя запись'}
+                  {' · '}{booking.paymentStatus === 'PAID' ? 'оплата получена' : booking.paymentStatus === 'UNPAID' ? 'оплата не получена' : 'оплата не подтверждена'}
+                </p>
+                <p className="text-white/60 text-xs mt-2">Участие: {booking.attendanceStatus === 'ATTENDED' ? 'Посетил' : booking.attendanceStatus === 'NO_SHOW' ? 'Неявка' : 'Не отмечено'}</p>
+                {booking.cancellationTiming && <p className="text-white/60 text-xs mt-2">
+                  {booking.cancellationTiming === 'TIMELY' ? 'Своевременная отмена' : 'Поздняя отмена · без долга и штрафа'}
+                </p>}
               </div>
 
+              <Link href={`/training/${training.id}`} className="text-brand-lime text-xs">Детали и отмена записи →</Link>
               <div
                 className={`shrink-0 px-4 py-2 rounded-full border text-[0.65rem] uppercase font-black tracking-[0.2em] transition-colors ${
                   isConfirmed

@@ -1,33 +1,21 @@
-import { Training, CreateTrainingDto } from "@govolley/shared-types";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-
-export async function getTrainings(): Promise<Training[]> {
-  const res = await fetch(`${API_URL}/training`, {
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    console.error(`API Error: ${res.status}`);
-    throw new Error("Ошибка загрузки тренировок");
-  }
-  return res.json();
+import type { z } from 'zod';
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string) { super(message); }
 }
-
-export async function createTraining(data: CreateTrainingDto) {
-  const formattedData = {
-    ...data,
-    date: new Date(data.date).toISOString(),
-  };
-
-  const res = await fetch(`${API_URL}/training`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formattedData),
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to create training");
+export async function readResponse<T>(response: Response, schema: z.ZodType<T>): Promise<T> {
+  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = body && typeof body === 'object' && 'message' in body && typeof body.message === 'string'
+      ? body.message : `Ошибка запроса (${response.status})`;
+    throw new ApiError(response.status, message);
   }
-  return res.json();
+  return schema.parse(body);
+}
+/** Browser requests always use the same origin; token is per request, never global. */
+export async function api<T>(path: string, schema: z.ZodType<T>, options: RequestInit = {}, token?: string): Promise<T> {
+  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Invalid API path');
+  const headers = new Headers(options.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+  return readResponse(await fetch(`/api${path}`, { ...options, headers, cache: 'no-store' }), schema);
 }

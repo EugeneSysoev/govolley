@@ -19,12 +19,34 @@ enum SkillLevel {
   ADVANCED     // Продвинутый
 }
 
+enum BookingKind {
+  LEGACY
+  SINGLE_CASH
+}
+
+enum CancellationTiming {
+  TIMELY
+  LATE
+}
+
+enum AttendanceStatus {
+  UNMARKED
+  ATTENDED
+  NO_SHOW
+}
+
+enum BookingAuditField {
+  ATTENDANCE
+  CASH_PAYMENT
+}
+
 model User {
   id              Int           @id @default(autoincrement())
   telegramId      String?       @unique
   username        String?       @unique // Тег в Telegram (@username)
   firstName       String?       
   lastName        String?
+  avatarKey       String?
   image           String?
   
   role            Role          @default(USER)
@@ -35,6 +57,8 @@ model User {
   // Связи
   bookings        Booking[]
   authSessions    AuthSession[]
+  bookingAudits   BookingAudit[]
+  notifications   Notification[]
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -67,17 +91,45 @@ model Booking {
   training    Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   status      String   @default("CONFIRMED") // CONFIRMED, CANCELLED
   paymentType String   @default("CASH")      // CASH, BALANCE
+  kind        BookingKind @default(LEGACY)
+  cashPrice   Int?
+  cancelledAt DateTime?
+  cancellationTiming CancellationTiming?
+  requestId   String? @db.Uuid
+  attendanceStatus AttendanceStatus @default(UNMARKED)
+  cashReceived Boolean?
+  auditEntries BookingAudit[]
+  notifications Notification[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, trainingId])
+  // A partial unique index in SQL permits history, but only one CONFIRMED place.
+  @@index([userId, trainingId])
+  @@unique([userId, requestId])
+}
+
+model BookingAudit {
+  id        Int @id @default(autoincrement())
+  bookingId Int
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actorId   Int
+  actor     User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  requestId String @db.Uuid
+  field     BookingAuditField
+  oldValue  String
+  newValue  String
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@unique([actorId, requestId])
+  @@index([bookingId, id])
 }
 
 model AuthSession {
   id         String   @id @default(uuid())
   telegramId String? 
-  status     String   @default("PENDING") // PENDING, CONFIRMED, EXPIRED
+  status     String   @default("PENDING") // PENDING, CONFIRMED, CONSUMED; all expire after the shared TTL
   
   userId     Int?
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -86,4 +138,44 @@ model AuthSession {
   updatedAt  DateTime @updatedAt
 
   @@index([status])
+}
+
+enum NotificationKind {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  RETRY
+  DELIVERED
+  UNDELIVERABLE
+}
+
+model Notification {
+  id            Int @id @default(autoincrement())
+  bookingId     Int
+  booking       Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId        Int
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingId    Int
+  kind          NotificationKind
+  recipient     String?
+  trainingTitle String
+  schoolDate    String
+  startTime     String
+  endTime       String
+  text          String
+  status        NotificationStatus @default(PENDING)
+  attempts      Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  leaseUntil    DateTime?
+  leaseToken    String? @db.Uuid
+  deliveredAt   DateTime?
+  lastError     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([bookingId, kind])
+  @@index([status, nextAttemptAt, leaseUntil])
 }

@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-18",
+  "timezone": "Asia/Bangkok",
+  "project": "C:\\Users\\User\\Desktop\\Рабочий стол\\Кодинг\\Проекты\\govolley",
+  "base_commit": "0959c948a7a287d06f84728799ebe5b1be68eaad",
+  "runtime": {
+    "bun": "1.4.2",
+    "node": "24.19.0",
+    "postgresql": "18"
+  },
+  "checks": {
+    "original_project_typecheck": {
+      "exit_code": 0
+    },
+    "original_project_lint": {
+      "exit_code": 0,
+      "frontend_errors": 0,
+      "frontend_warnings": 7
+    },
+    "original_project_unit_component_tests": {
+      "exit_code": 0,
+      "backend_passed": 39,
+      "frontend_passed": 15
+    },
+    "postgres_integration": {
+      "exit_code": 0,
+      "scenarios": 13,
+      "last_seat_contenders": 20,
+      "last_seat_successes": 1,
+      "exchange_contenders": 10,
+      "exchange_successes": 1
+    },
+    "http_smoke": {
+      "exit_code": 0,
+      "passed": 2,
+      "external_dependencies_replaced": true
+    },
+    "production_build": {
+      "exit_code": 0,
+      "backend": true,
+      "frontend": true,
+      "fresh_frozen_install": true,
+      "case_sensitive_ntfs": true
+    },
+    "browser_smoke": {
+      "exit_code": 0,
+      "groups_passed": 7,
+      "browser": "Chrome headless",
+      "real_nextauth_nest_postgresql": true,
+      "telegram_confirmation_fixture": true
+    },
+    "migrations": {
+      "all_nine_applied_to_empty_test_database": true,
+      "existing_migration_bytes_unchanged": true
+    },
+    "source_transfer": {
+      "original_matches_prepared_source": true,
+      "navbar_two_step_git_rename": true,
+      "user_map_streets_preserved": true
+    },
+    "dependency_audit": {
+      "exit_code": 1,
+      "remaining_packages": [
+        "braces",
+        "maplibre-gl",
+        "sprintf-js"
+      ]
+    }
+  },
+  "findings": {
+    "F1": "исправлено и проверено",
+    "F2": "исправлено и проверено",
+    "F3": "исправлено и проверено",
+    "F4": "исправлено и проверено",
+    "F5": "исправлено и проверено",
+    "F6": "исправлено и проверено",
+    "F7": "исправлено и проверено",
+    "F8": "исправлено и проверено",
+    "F9": "исправлено и проверено",
+    "F10": "исправлено и проверено",
+    "F11": "исправлено и проверено",
+    "F12": "исправлено и проверено",
+    "F13": "исправлено и проверено",
+    "F14": "исправлено и проверено",
+    "S1": "исправлено и проверено",
+    "S2": "исправлено и проверено",
+    "S3": "исправлено и проверено",
+    "D1": "исправлено и проверено",
+    "D2": "исправлено и проверено"
+  },
+  "new_migration": "20261018000000_avatar_key",
+  "test_cleanup": {
+    "users": 0,
+    "trainings": 0,
+    "auth_sessions": 0,
+    "created_postgresql_stopped": true,
+    "test_http_servers_stopped": true
+  },
+  "limitations": [
+    "Live Telegram not exercised",
+    "Live MapTiler tiles/WebGL not exercised",
+    "Production deployment/configuration/database not exercised",
+    "MapLibre dependency remains advisory-affected; attribution HTML control disabled",
+    "braces and sprintf-js remain in development tooling",
+    "Global nvm shim is unconfigured; checks used bundled Node"
+  ],
+  "production_changed": false,
+  "push_performed": false,
+  "commit_created": false
+}

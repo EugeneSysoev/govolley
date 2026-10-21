@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,9 +24,15 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@prisma/client": ["../backend/node_modules/.prisma/client"]
-    }
+      "@/*": [
+        "./*"
+      ]
+    },
+    "types": [
+      "node",
+      "jest",
+      "@testing-library/jest-dom"
+    ]
   },
   "include": [
     "next-env.d.ts",
@@ -32,5 +42,7 @@
     ".next/dev/types/**/*.ts",
     "flubber.d.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

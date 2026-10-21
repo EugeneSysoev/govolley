@@ -1,110 +1,124 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { UpdateUserDto } from '../common/validators/user.schema.js';
-import { join } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
-import { promises as fs } from 'node:fs';
-import { SkillLevel } from '@prisma/client';
-import 'multer';
-
+import { evaluateLevel, type Booking } from '@govolley/shared-types';
+import { AvatarStorage } from './avatar-storage.service.js';
+import { publicProfile } from './public-profile.js';
+import { bookingState } from '../training/booking-response.js';
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
-
+  private readonly logger = new Logger(UsersService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly avatars: AvatarStorage,
+  ) {}
   async updateProfile(
     userId: number,
     dto: UpdateUserDto,
     file?: Express.Multer.File,
   ) {
-    // Получение текущего пользователя
-    const currentUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!currentUser) {
-      throw new NotFoundException('Пользователь не найден');
-    }
-
-    // Сохранение существующего изображения по умолчанию
-    let imagePath = currentUser.image;
-
-    if (dto.image !== undefined) {
-      imagePath = dto.image;
-    }
-
-    if (file) {
-      const uploadDir = join(process.cwd(), 'public', 'uploads');
-
-      // Удаление старого изображения при загрузке нового
-      if (currentUser.image?.startsWith('/uploads/')) {
-        const oldFilePath = join(process.cwd(), 'public', currentUser.image);
-        await fs.unlink(oldFilePath).catch(() => {});
+    const key = file ? await this.avatars.store(file) : undefined;
+    let oldKey: string | null = null;
+    let updated: User;
+    try {
+      updated = await this.prisma.$transaction(async (tx) => {
+        const rows = await tx.$queryRaw<
+          User[]
+        >`SELECT * FROM "User" WHERE id = ${userId} FOR UPDATE`;
+        if (!rows[0]) throw new NotFoundException('Пользователь не найден');
+        oldKey = rows[0].avatarKey;
+        return tx.user.update({
+          where: { id: userId },
+          data: {
+            username: dto.username,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            ...(key ? { avatarKey: key, image: null } : {}),
+          },
+        });
+      });
+    } catch (error) {
+      if (key) {
+        // An ambiguous commit/network failure must never delete a referenced avatar.
+        try {
+          const referenced = await this.prisma.user.count({
+            where: { avatarKey: key },
+          });
+          if (!referenced) await this.avatars.remove(key);
+        } catch {
+          this.logger.warn('Avatar cleanup deferred');
+        }
       }
-
-      if (!existsSync(uploadDir)) {
-        mkdirSync(uploadDir, { recursive: true });
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Это имя пользователя уже занято');
       }
-
-      // Генерация уникального имени файла
-      const fileExt = file.originalname.split('.').pop();
-      const fileName = `avatar-${userId}-${Date.now()}.${fileExt}`;
-      const fullPath = join(uploadDir, fileName);
-
-      await fs.writeFile(fullPath, file.buffer);
-
-      imagePath = `/uploads/${fileName}`;
+      throw error;
     }
-
-    // Обновление профиля пользователя
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        username: dto.username,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        skillLevel: dto.skillLevel,
-        image: imagePath,
-      },
-    });
+    if (key && oldKey) {
+      try {
+        await this.avatars.remove(oldKey);
+      } catch {
+        this.logger.warn('Old avatar cleanup deferred');
+      }
+    }
+    return publicProfile(updated);
   }
-
-  // Завершение онбординга с определением уровня навыков
-  async completeOnboarding(userId: number, totalScore: number) {
-    let skillLevel: SkillLevel = SkillLevel.BEGINNER;
-
-    if (totalScore >= 25) {
-      skillLevel = SkillLevel.ADVANCED;
-    } else if (totalScore >= 15) {
-      skillLevel = SkillLevel.INTERMEDIATE;
-    }
-
-    return this.prisma.user.update({
-      where: { id: userId },
+  async completeOnboarding(userId: number, answers: number[]) {
+    const skillLevel = evaluateLevel(answers);
+    const result = await this.prisma.user.updateMany({
+      where: { id: userId, skillLevel: 'NOT_SET', isLevelVerified: false },
       data: { skillLevel },
     });
+    if (!result.count)
+      throw new ConflictException(
+        'Анкета уже завершена или уровень подтвержден',
+      );
+    return this.findOne(userId);
   }
-
-  // Получение всех бронирований пользователя
-  async getUserBookings(userId: number) {
-    return this.prisma.booking.findMany({
+  async getUserBookings(userId: number): Promise<Booking[]> {
+    const bookings = await this.prisma.booking.findMany({
       where: { userId },
       include: { training: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'desc' },
     });
+    return bookings.map((booking) => ({
+      ...bookingState(booking),
+      training: {
+        id: booking.training.id,
+        title: booking.training.title,
+        date: booking.training.date.toISOString(),
+        startTime: booking.training.startTime,
+        endTime: booking.training.endTime,
+        location: booking.training.location,
+        isActive: booking.training.isActive,
+      },
+    }));
   }
-
-  // Обновление статуса верификации уровня
-  async verifyLevel(userId: number, isVerified: boolean) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { isLevelVerified: isVerified },
-    });
+  async verifyLevel(userId: number, isLevelVerified: boolean) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    if (user.skillLevel === 'NOT_SET')
+      throw new ConflictException('Сначала завершите анкету');
+    return publicProfile(
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { isLevelVerified },
+      }),
+    );
   }
-
-  // Поиск пользователя по ID
   async findOne(id: number) {
-    return this.prisma.user.findUnique({
-      where: { id },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return publicProfile(user);
   }
 }

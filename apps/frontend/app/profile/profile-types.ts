@@ -1,18 +1,5 @@
-export interface Booking {
-  id: number;
-  status: "CONFIRMED" | "CANCELLED";
-  createdAt: string;
-  training: {
-    id: number;
-    title: string;
-    date: string;
-    startTime: string;
-    location: string;
-  };
-}
-
-export interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  skillLevel: string;
-}
+import type { z } from 'zod';
+import type { bookingsSchema, Profile } from '@/lib/contracts';
+export type Booking = z.infer<typeof bookingsSchema>[number];
+export type ProfileUser = Omit<Profile, 'id'> & { id: string | number };
+export interface ProfileFormData { firstName: string; lastName: string }

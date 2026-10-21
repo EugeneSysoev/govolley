@@ -54,7 +54,7 @@ export default function Navbar({ introFinished }: NavbarProps) {
 
   const isLocked =
     status === "authenticated" &&
-    (session?.user as any)?.skillLevel === "NOT_SET";
+    session?.user?.skillLevel === "NOT_SET";
 
   const filteredLinks = isLocked
     ? NAV_LINKS.filter((link) => link.href === "/")
@@ -65,7 +65,7 @@ export default function Navbar({ introFinished }: NavbarProps) {
       router.push("/auth/signin");
       return;
     }
-    const user = session?.user as any;
+    const user = session?.user;
     if (!user?.skillLevel || user?.skillLevel === "NOT_SET") {
       router.push("/onboarding");
     } else {

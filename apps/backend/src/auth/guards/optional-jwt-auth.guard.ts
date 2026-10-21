@@ -1,28 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-
-type JwtUser = {
-  id: string;
-  role?: string;
-};
-
+import type { Request } from 'express';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
 @Injectable()
-export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest<TUser = JwtUser | null>(
-    err: unknown,
-    user: JwtUser | false | null,
-    _info: unknown,
-    _context: ExecutionContext,
-    _status?: unknown,
-  ): TUser {
-    if (err) {
-      throw new Error('Unauthorized');
-    }
-    void _info;
-    void _context;
-    void _status;
-
-    return (user || null) as TUser;
+export class OptionalJwtAuthGuard extends JwtAuthGuard {
+  canActivate(context: ExecutionContext) {
+    const req = context.switchToHttp().getRequest<Request>();
+    if (!req.headers.authorization) return true;
+    return super.canActivate(context);
   }
 }

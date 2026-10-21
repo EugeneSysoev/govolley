@@ -7,7 +7,7 @@ import PremiumWordPullUp from "@/components/magicui/word-pull-up";
 import { ScrollIndicator } from "./scroll-indicator";
 
 interface FeatureCardProps {
-  item: any;
+  item: (typeof import("./constants").FEATURES_DATA)[number];
   index: number;
 }
 

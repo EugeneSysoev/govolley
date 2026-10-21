@@ -2,29 +2,28 @@
 
 import * as THREE from "three";
 import { useRef, useEffect } from "react";
+import type { ThreeElements } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 
-export function VolleyballModel(props: any) {
+export function VolleyballModel(props: ThreeElements["group"]) {
   const group = useRef<THREE.Group>(null);
-  const { nodes, materials } = useGLTF("/models/volleyball.glb") as any;
+  const { nodes, materials } = useGLTF("/models/volleyball.glb");
 
+  const mesh = nodes.defaultMaterial;
   useEffect(() => {
-    if (nodes?.defaultMaterial?.geometry) {
-      nodes.defaultMaterial.geometry.center();
+    if (mesh instanceof THREE.Mesh) {
+      mesh.geometry.center();
     }
-  }, [nodes]);
+  }, [mesh]);
 
-  if (!nodes || !nodes.defaultMaterial) {
-    console.error("Объект defaultMaterial не найден в модели!");
-    return null;
-  }
+  if (!(mesh instanceof THREE.Mesh)) return null;
 
   return (
     <group ref={group} {...props} dispose={null}>
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes.defaultMaterial.geometry}
+        geometry={mesh.geometry}
         material={materials.Volleyball || materials.defaultMaterial}
         rotation={[-Math.PI / 2, 0, 0]}
         scale={0.3}
