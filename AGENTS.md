@@ -1,35 +1,18 @@
 # GoVolley
 
-## Product scope
+## Начало работы
 
-Перед планированием или реализацией продуктовых изменений прочитайте [docs/PROJECT.md](docs/PROJECT.md) для различения текущего состояния и согласованного MVP, затем [docs/MVP-SPEC.md](docs/MVP-SPEC.md) для требований и критериев проверки. Согласованное требование не означает, что оно уже реализовано; фактический статус сверяйте с кодом и историей.
+- **Продолжение MVP или передача между чатами:** сначала [RESUME.md](docs/agents/RESUME.md), затем [план разработки](docs/agents/development-plan.md). Это действующий процесс, включая остановку на 50% пятичасового лимита.
+- **Продуктовое изменение:** прочитайте [PROJECT.md](docs/PROJECT.md), затем требования и критерии [MVP-SPEC.md](docs/MVP-SPEC.md). Координатор читает спецификацию полностью один раз при старте; исполнителю указывает относящиеся разделы и issue. Требование не означает готовую реализацию.
+- Прочитанный материал повторно открывают при изменении версии или новом вопросе. Исторические поручения и отчёты сохраняют факты; текущий порядок работы задаёт актуальный план.
 
-## Agent skills
+## Указатели по задаче
 
-### Development plan
-
-Перед реализацией задач MVP, выдачей задач подагентам или сборкой общего PR прочитайте [docs/agents/development-plan.md](docs/agents/development-plan.md): там роли навыков, граф зависимостей, порядок работы в отдельных worktree и критерии готовности реализации, интеграции и ревью.
-
-### Issue tracker
-
-Перед чтением, созданием или обновлением задач используйте GitHub Issues `EugeneSysoev/govolley` по правилам [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
-
-### Triage labels
-
-При оценке задач и изменении их меток используйте пять стандартных ролей из [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
-
-### Domain docs
-
-Перед изучением доменной модели прочитайте правила single-context в [docs/agents/domain.md](docs/agents/domain.md).
-
-### Project history
-
-Перед исправлениями или повторным аудитом прочитайте [docs/history/README.md](docs/history/README.md): там сохранены результаты прежних работ и границы их проверок.
-
-### Review findings
-
-При исправлении замечаний или повторном ревью прочитайте [docs/agents/code-review-findings.md](docs/agents/code-review-findings.md). Сохраняйте идентификаторы STD-xxx и SPEC-xxx; закрывайте пункты после проверки указанных критериев готовности.
-
-### Module design
-
-Перед изменением интерфейсов модулей или рефакторингом профиля, входа и контрактов тренировок прочитайте [docs/agents/codebase-design.md](docs/agents/codebase-design.md): там приоритеты, предлагаемые seams и критерии проверки. Это рекомендации; статус реализации сверяйте с историей и замечаниями ревью.
+| Когда | Что прочитать |
+| --- | --- |
+| Читать или обновлять GitHub issues | [issue-tracker.md](docs/agents/issue-tracker.md), репозиторий EugeneSysoev/govolley |
+| Оценивать задачи или менять triage-метки | [triage-labels.md](docs/agents/triage-labels.md) |
+| Изучать или менять доменную модель | [domain.md](docs/agents/domain.md), CONTEXT.md, применимые ADR |
+| Исправлять ошибку или повторять аудит | [история](docs/history/README.md), затем отчёты затрагиваемой области |
+| Исправлять замечания ревью | [code-review-findings.md](docs/agents/code-review-findings.md); сохранять STD-xxx/SPEC-xxx и закрывать по их критериям |
+| Менять interface профиля, входа или тренировок | Соответствующий раздел [codebase-design.md](docs/agents/codebase-design.md) |
