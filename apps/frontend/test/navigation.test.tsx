@@ -76,13 +76,13 @@ it('lets an enrolled user cancel a full group with no location', async () => {
   expect(screen.getByText('Уточняется')).toBeInTheDocument();
 });
 it('links My trainings to details and cancellation', () => {
-  render(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', kind: 'LEGACY', paymentType: 'BALANCE', cashPrice: null, paymentStatus: 'UNRECORDED', cancelledAt: null, cancellationTiming: null, createdAt: training.createdAt, training }]} />);
+  render(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', kind: 'LEGACY', paymentType: 'BALANCE', cashPrice: null, paymentStatus: 'UNRECORDED', cashReceived: null, attendanceStatus: 'UNMARKED', cancelledAt: null, cancellationTiming: null, createdAt: training.createdAt, training }]} />);
   expect(screen.getByRole('link', { name: /Детали и отмена/ })).toHaveAttribute('href', '/training/7');
 });
 it('shows cash terms before confirmation and keeps late cancellation free of debt', async () => {
   jest.mocked(trainingApi.get).mockResolvedValue(training);
   render(<><BookingSidebar training={{ ...training, isBooked: false, currentParticipants: 0 }} />
-    <ProfileBookings bookings={[{ id: 2, status: 'CANCELLED', kind: 'SINGLE_CASH', paymentType: 'CASH', cashPrice: 500, paymentStatus: 'UNPAID', cancelledAt: '2026-10-31T23:00:00.000Z', cancellationTiming: 'LATE', createdAt: training.createdAt, training }]} /></>);
+    <ProfileBookings bookings={[{ id: 2, status: 'CANCELLED', kind: 'SINGLE_CASH', paymentType: 'CASH', cashPrice: 500, paymentStatus: 'UNPAID', cashReceived: null, attendanceStatus: 'UNMARKED', cancelledAt: '2026-10-31T23:00:00.000Z', cancellationTiming: 'LATE', createdAt: training.createdAt, training }]} /></>);
   expect(await screen.findByText('500 ฿ на месте. Оплата при посещении.')).toBeInTheDocument();
   expect(screen.getByText('Поздняя отмена · без долга и штрафа')).toBeInTheDocument();
 });

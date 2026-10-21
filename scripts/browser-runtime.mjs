@@ -54,8 +54,9 @@ export async function startBrowserRuntime({ backendPort, frontendPort, secret })
   const { AuthSessionService } = await import(new URL('apps/backend/dist/src/auth/auth-session.service.js', root));
   const { UserModule } = await import(new URL('apps/backend/dist/src/user/user.module.js', root));
   const { TrainingModule } = await import(new URL('apps/backend/dist/src/training/training.module.js', root));
+  const { StaffParticipantsModule } = await import(new URL('apps/backend/dist/src/participants/staff-participants.module.js', root));
   class BrowserModule {}
-  Module({ imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), PrismaModule, AuthModule, UserModule, TrainingModule] })(BrowserModule);
+  Module({ imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), PrismaModule, AuthModule, UserModule, TrainingModule, StaffParticipantsModule] })(BrowserModule);
   let app;
   let db;
   let frontend;

@@ -11,6 +11,7 @@ import type { UpdateUserDto } from '../common/validators/user.schema.js';
 import { evaluateLevel, type Booking } from '@govolley/shared-types';
 import { AvatarStorage } from './avatar-storage.service.js';
 import { publicProfile } from './public-profile.js';
+import { bookingState } from '../training/booking-response.js';
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -91,16 +92,7 @@ export class UsersService {
       orderBy: { id: 'desc' },
     });
     return bookings.map((booking) => ({
-      id: booking.id,
-      status: booking.status as Booking['status'],
-      kind: booking.kind,
-      paymentType: booking.paymentType,
-      cashPrice: booking.cashPrice,
-      // A stored payment method, including legacy CASH, never proves receipt.
-      paymentStatus: booking.kind === 'SINGLE_CASH' ? 'UNPAID' : 'UNRECORDED',
-      cancelledAt: booking.cancelledAt?.toISOString() ?? null,
-      cancellationTiming: booking.cancellationTiming,
-      createdAt: booking.createdAt.toISOString(),
+      ...bookingState(booking),
       training: {
         id: booking.training.id,
         title: booking.training.title,

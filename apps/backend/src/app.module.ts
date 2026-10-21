@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module.js';
 import { TrainingModule } from './training/training.module.js';
 import { BotModule } from './bot/bot.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { StaffParticipantsModule } from './participants/staff-participants.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AuthModule,
     UserModule,
     TrainingModule,
+    StaffParticipantsModule,
     BotModule,
 
     ScheduleModule.forRoot(),
