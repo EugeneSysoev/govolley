@@ -28,7 +28,7 @@ it('uses the saved-training contract for browser reads and management responses'
     new Response(JSON.stringify(path === '/api/training' ? [training] : training)));
   expect(await trainingApi.getAll()).toEqual([training]);
   expect(await trainingApi.get(7)).toEqual(training);
-  expect(await trainingApi.update(7, { location: null }, 'staff')).toEqual(training);
+  expect(await trainingApi.update(7, { description: null }, 'staff')).toEqual(training);
   expect(await trainingApi.delete(7, 'staff')).toEqual(training);
   fetcher.mockResolvedValue(new Response(JSON.stringify({ ...training, isBooked: 'true' })));
   await expect(trainingApi.get(7)).rejects.toThrow();

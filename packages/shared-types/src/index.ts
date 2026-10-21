@@ -1,6 +1,7 @@
 export * from './enums.js';
 export * from './ids.js';
 export * from './training.js';
+export * from './school-time.js';
 export * from './onboarding.js';
 /**
  * User

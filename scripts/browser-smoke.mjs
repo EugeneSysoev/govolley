@@ -65,7 +65,7 @@ try {
   await page.goto(`${base}/training`);
   await page.getByRole('button', { name: /Посмотреть детали/ }).click();
   await page.waitForURL(`**/training/${trainingId}`);
-  await page.getByText('Локация уточняется', { exact: true }).waitFor({ state: 'visible' });
+  await page.getByText('Уточняется', { exact: true }).first().waitFor({ state: 'visible' });
   await page.getByRole('button', { name: /Отменить запись/ }).click();
   await page.getByRole('button', { name: /Подтвердить/ }).waitFor({ state: 'visible' });
   assert.equal((await db.booking.findUniqueOrThrow({ where: { userId_trainingId: { userId, trainingId } } })).status, 'CANCELLED');

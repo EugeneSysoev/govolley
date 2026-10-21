@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ProfileUser, ProfileFormData } from "./profile-types";
+import { formatSchoolDate, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 interface ProfileHeaderProps {
   user?: ProfileUser;
@@ -24,7 +25,7 @@ export function ProfileHeader({
   onAvatarChange,
   fileInputRef,
 }: ProfileHeaderProps) {
-  const joinDate = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' }).replace(' г.', '') : '';
+  const joinDate = user?.createdAt ? formatSchoolDate(user.createdAt, { month: 'short', year: 'numeric' }).replace(' г.', '') : '';
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
@@ -94,7 +95,7 @@ export function ProfileHeader({
               telegram @{user?.username}
             </p>
             <p className="text-[clamp(0.6rem,1.5vw,0.7rem)] text-white/40 font-mono uppercase tracking-[0.2em] mt-4">
-              В GoVolley с {joinDate || "недавно"}
+              В GoVolley с {joinDate || "недавно"} · {SCHOOL_TIME_LABEL}
             </p>
           </>
         )}

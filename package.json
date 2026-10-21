@@ -16,7 +16,8 @@
     "test:integration": "bun run --cwd apps/backend test:integration",
     "test:db:prepare": "node scripts/test-database.mjs",
     "test:browser": "node scripts/browser-smoke.mjs",
-    "admin:bootstrap": "node scripts/bootstrap-admin.mjs"
+    "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
+    "test:browser:school-time": "node scripts/training-school-time.browser.mjs"
   },
   "devDependencies": {
     "turbo": "^2.11.9",

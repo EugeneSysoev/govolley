@@ -1,12 +1,6 @@
 "use client";
 import type { ProfileUser } from "./profile-types";
-
-const skillLevelLabels: Record<string, string> = {
-  NOT_SET: "Не указан",
-  BEGINNER: "Новичок",
-  INTERMEDIATE: "Средний",
-  ADVANCED: "Продвинутый",
-};
+import { LEVEL_LABELS } from '@/lib/training-display';
 
 interface ProfileStatsProps {
   user?: ProfileUser;
@@ -41,7 +35,7 @@ export function ProfileStats({
 
         {/* Всегда показываем уровень без возможности редактирования */}
         <span className="truncate font-bold uppercase drop-shadow-md/50 tracking-wider text-[clamp(1rem,2vw,1.2rem)] text-white">
-          {skillLevelLabels[user?.skillLevel ?? "NOT_SET"] || "—"}
+          {LEVEL_LABELS[user?.skillLevel ?? "NOT_SET"]}
         </span>
 
         {(userRole === "COACH" || userRole === "ADMIN") &&

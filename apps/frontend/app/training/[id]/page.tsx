@@ -9,6 +9,7 @@ import GlobalBackground from "@/components/background/global-background";
 import { BookingSidebar } from "./booking-sidebar";
 import { TrainingLocationView } from "./training-details-view";
 import { LOCATIONS } from "../../locations/constants";
+import { locationLabel } from '@/lib/training-display';
 
 export default async function TrainingDetailPage({
   params,
@@ -53,7 +54,7 @@ export default async function TrainingDetailPage({
         <div className="grid lg:grid-cols-12 gap-6 lg:gap-10 lg:px-20 items-stretch">
           <div className="lg:col-span-7 h-full order-1">
             <TrainingLocationView
-              name={training.location ?? "Локация уточняется"}
+              name={locationLabel(training.location)}
               image={locationInfo?.image}
               googleUrl={locationInfo?.googleUrl}
               fullHeight
@@ -64,6 +65,7 @@ export default async function TrainingDetailPage({
             <BookingSidebar training={training} />
           </aside>
         </div>
+        {training.description && <p className="whitespace-pre-wrap text-white/80 my-8 lg:px-20">{training.description}</p>}
       </div>
     </div>
   );
