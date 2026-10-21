@@ -1,5 +1,6 @@
 import { z } from 'zod';
 export { TrainingResponseSchema as trainingSchema } from '@govolley/shared-types';
+import { BookingResponseSchema } from '@govolley/shared-types';
 export const profileSchema = z.object({
   id: z.number().int().positive(), firstName: z.string().nullable(), lastName: z.string().nullable(),
   username: z.string().nullable(), image: z.string().nullable(), role: z.enum(['USER','COACH','ADMIN']),
@@ -11,7 +12,4 @@ export const roleCandidatesSchema = z.array(profileSchema.pick({
   id: true, firstName: true, lastName: true, username: true, role: true,
 }));
 export const loginSchema = profileSchema.extend({ accessToken: z.string().min(1) });
-export const bookingsSchema = z.array(z.object({
-  id: z.number().int(), status: z.enum(['CONFIRMED','CANCELLED']), createdAt: z.iso.datetime(),
-  training: z.object({ id: z.number().int(), title: z.string(), date: z.iso.datetime(), startTime: z.string(), endTime: z.string(), location: z.string().nullable(), isActive: z.boolean() }),
-}));
+export const bookingsSchema = z.array(BookingResponseSchema);

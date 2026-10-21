@@ -98,6 +98,14 @@ export function ProfileBookings({
                     </span>
                   </div>
                 </div>
+                <p className="text-white/60 text-xs mt-3">
+                  {booking.kind === 'SINGLE_CASH'
+                    ? `Разовая запись: ${booking.cashPrice} ฿ на месте · оплата не получена`
+                    : 'Прежняя запись · оплата не подтверждена'}
+                </p>
+                {booking.cancellationTiming && <p className="text-white/60 text-xs mt-2">
+                  {booking.cancellationTiming === 'TIMELY' ? 'Своевременная отмена' : 'Поздняя отмена · без долга и штрафа'}
+                </p>}
               </div>
 
               <Link href={`/training/${training.id}`} className="text-brand-lime text-xs">Детали и отмена записи →</Link>

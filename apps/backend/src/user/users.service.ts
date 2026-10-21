@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { User } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import type { UpdateUserDto } from '../common/validators/user.schema.js';
-import { evaluateLevel } from '@govolley/shared-types';
+import { evaluateLevel, type Booking } from '@govolley/shared-types';
 import { AvatarStorage } from './avatar-storage.service.js';
 import { publicProfile } from './public-profile.js';
 @Injectable()
@@ -84,12 +84,33 @@ export class UsersService {
       );
     return this.findOne(userId);
   }
-  getUserBookings(userId: number) {
-    return this.prisma.booking.findMany({
+  async getUserBookings(userId: number): Promise<Booking[]> {
+    const bookings = await this.prisma.booking.findMany({
       where: { userId },
       include: { training: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'desc' },
     });
+    return bookings.map((booking) => ({
+      id: booking.id,
+      status: booking.status as Booking['status'],
+      kind: booking.kind,
+      paymentType: booking.paymentType,
+      cashPrice: booking.cashPrice,
+      // A stored payment method, including legacy CASH, never proves receipt.
+      paymentStatus: booking.kind === 'SINGLE_CASH' ? 'UNPAID' : 'UNRECORDED',
+      cancelledAt: booking.cancelledAt?.toISOString() ?? null,
+      cancellationTiming: booking.cancellationTiming,
+      createdAt: booking.createdAt.toISOString(),
+      training: {
+        id: booking.training.id,
+        title: booking.training.title,
+        date: booking.training.date.toISOString(),
+        startTime: booking.training.startTime,
+        endTime: booking.training.endTime,
+        location: booking.training.location,
+        isActive: booking.training.isActive,
+      },
+    }));
   }
   async verifyLevel(userId: number, isLevelVerified: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

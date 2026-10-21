@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { startBrowserRuntime } from './browser-runtime.mjs';
+import { schoolDateKey } from '../packages/shared-types/dist/index.js';
 
 // Real NextAuth + Nest + PostgreSQL. Telegram confirmation is replaced by a fixture.
 // Build with BACKEND_URL matching TEST_BACKEND_PORT before running.
@@ -18,9 +19,9 @@ try {
   previousOwnerId = previousOwner.id;
   const user = await db.user.create({ data: { telegramId: String(identity.id), firstName: 'Browser Fixture', role: 'COACH' } });
   userId = user.id;
-  const event = await db.training.create({ data: { title: 'Browser smoke training', date: new Date(), startTime: '07:00', endTime: '09:00', maxParticipants: 1 } });
+  const event = await db.training.create({ data: { title: `Browser smoke training ${randomUUID()}`, date: new Date(Date.now() + 7 * 86400000), startTime: '07:00', endTime: '09:00', targetLevel: 'ADVANCED', maxParticipants: 1 } });
   trainingId = event.id;
-  await db.booking.create({ data: { userId, trainingId } });
+  const legacyBooking = await db.booking.create({ data: { userId, trainingId, paymentType: 'BALANCE' } });
   const context = await browser.newContext();
   await context.route('https://t.me/**', (route) => route.abort());
   const page = await context.newPage();
@@ -63,17 +64,35 @@ try {
   assert.equal(current.user.role, 'COACH'); assert.equal(current.user.isLevelVerified, false);
   results.push('NextAuth update rejects forged role/verification');
   await page.goto(`${base}/training`);
+  await page.getByRole('button', { name: 'Открыть календарь' }).click();
+  const [schoolYear, schoolMonth] = schoolDateKey(event.date).split('-');
+  await page.getByLabel('Месяц по Пхукету', { exact: true }).selectOption(`${schoolYear}-${Number(schoolMonth) - 1}`);
+  await page.getByRole('button', { name: schoolDateKey(event.date), exact: true }).click();
+  await page.getByRole('button', { name: 'Выбрать', exact: true }).click();
   await page.getByRole('button', { name: /Посмотреть детали/ }).click();
   await page.waitForURL(`**/training/${trainingId}`);
   await page.getByText('Уточняется', { exact: true }).first().waitFor({ state: 'visible' });
   await page.getByRole('button', { name: /Отменить запись/ }).click();
   await page.getByRole('button', { name: /Подтвердить/ }).waitFor({ state: 'visible' });
-  assert.equal((await db.booking.findUniqueOrThrow({ where: { userId_trainingId: { userId, trainingId } } })).status, 'CANCELLED');
+  assert.equal((await db.booking.findUniqueOrThrow({ where: { id: legacyBooking.id } })).status, 'CANCELLED');
   results.push('SSR null location + cancel full group');
+  await page.getByText('500 ฿ на месте. Оплата при посещении.', { exact: true }).waitFor({ state: 'visible' });
   await page.getByRole('button', { name: /Подтвердить/ }).click();
   await page.getByRole('button', { name: /Отменить запись/ }).waitFor({ state: 'visible' });
   await page.goto(`${base}/profile`);
-  await page.getByRole('link', { name: /Детали и отмена записи/ }).waitFor({ state: 'visible' });
+  await page.getByRole('link', { name: /Детали и отмена записи/ }).first().waitFor({ state: 'visible' });
+  await page.getByText('Разовая запись: 500 ฿ на месте · оплата не получена', { exact: true }).waitFor({ state: 'visible' });
+  const cashBooking = await db.booking.findFirstOrThrow({ where: { userId, trainingId, kind: 'SINGLE_CASH' } });
+  assert.notEqual(cashBooking.id, legacyBooking.id);
+  assert.equal(cashBooking.cashPrice, 500);
+  await page.goto(`${base}/training/${trainingId}`);
+  await page.getByRole('button', { name: /Отменить запись/ }).click();
+  await page.getByRole('button', { name: /Подтвердить/ }).waitFor({ state: 'visible' });
+  await page.goto(`${base}/profile`);
+  await page.getByText('Своевременная отмена', { exact: true }).first().waitFor({ state: 'visible' });
+  assert.equal((await db.booking.findUniqueOrThrow({ where: { id: cashBooking.id } })).status, 'CANCELLED');
+  assert.equal(await db.booking.count({ where: { userId, trainingId } }), 2);
+  results.push('onboarded learner books cash500 unpaid, sees history and cancels without losing legacy booking');
   await page.getByRole('button', { name: 'Подтвердить уровень', exact: true }).click();
   await page.getByText('✓', { exact: true }).waitFor({ state: 'visible' });
   const signoutCsrf = await (await context.request.get(`${base}/api/auth/csrf`)).json();

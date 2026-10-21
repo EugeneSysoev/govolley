@@ -39,6 +39,8 @@ export const TrainingResponseSchema = z.object({
   maxParticipants: z.number().int().nonnegative(),
   currentParticipants: z.number().int().nonnegative(),
   isBooked: z.boolean(),
+  /** Only the viewer's active booking identity; anonymous viewers receive null. */
+  bookingId: z.number().int().positive().nullable().optional(),
   price: z.number().finite().nullable(),
   coachName: z.string().nullable(),
   location: z.string().nullable(),

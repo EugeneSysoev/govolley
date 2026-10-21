@@ -20,7 +20,7 @@ jest.mock('@/components/navbar/navbar', () => ({ __esModule: true, default: () =
 jest.mock('@/components/footer', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/app/training/api', () => ({ trainingApi: { get: jest.fn(), book: jest.fn(), unbook: jest.fn() } }));
 const training: Training = { id: 7, title: 'Full group', date: '2026-11-01T00:00:00.000Z', startTime: '07:00', endTime: '09:00',
-  description: null, targetLevel: 'BEGINNER', maxParticipants: 1, currentParticipants: 1, isBooked: true,
+  description: null, targetLevel: 'BEGINNER', maxParticipants: 1, currentParticipants: 1, isBooked: true, bookingId: 17,
   price: 500, location: null, coachName: null, isActive: true, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' };
 
 beforeEach(() => { jest.clearAllMocks(); sessionStorage.clear(); mockPath = '/'; mockLevel = 'BEGINNER'; });
@@ -72,10 +72,17 @@ it('lets an enrolled user cancel a full group with no location', async () => {
   jest.mocked(trainingApi.unbook).mockResolvedValue({ ...training, isBooked: false, currentParticipants: 0 });
   render(<BookingSidebar training={training} />);
   fireEvent.click(screen.getByRole('button', { name: /Отменить запись/ }));
-  await waitFor(() => expect(trainingApi.unbook).toHaveBeenCalledWith(7, 'test-token'));
+  await waitFor(() => expect(trainingApi.unbook).toHaveBeenCalledWith(7, 'test-token', 17));
   expect(screen.getByText('Уточняется')).toBeInTheDocument();
 });
 it('links My trainings to details and cancellation', () => {
-  render(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', createdAt: training.createdAt, training }]} />);
+  render(<ProfileBookings bookings={[{ id: 1, status: 'CONFIRMED', kind: 'LEGACY', paymentType: 'BALANCE', cashPrice: null, paymentStatus: 'UNRECORDED', cancelledAt: null, cancellationTiming: null, createdAt: training.createdAt, training }]} />);
   expect(screen.getByRole('link', { name: /Детали и отмена/ })).toHaveAttribute('href', '/training/7');
+});
+it('shows cash terms before confirmation and keeps late cancellation free of debt', async () => {
+  jest.mocked(trainingApi.get).mockResolvedValue(training);
+  render(<><BookingSidebar training={{ ...training, isBooked: false, currentParticipants: 0 }} />
+    <ProfileBookings bookings={[{ id: 2, status: 'CANCELLED', kind: 'SINGLE_CASH', paymentType: 'CASH', cashPrice: 500, paymentStatus: 'UNPAID', cancelledAt: '2026-10-31T23:00:00.000Z', cancellationTiming: 'LATE', createdAt: training.createdAt, training }]} /></>);
+  expect(await screen.findByText('500 ฿ на месте. Оплата при посещении.')).toBeInTheDocument();
+  expect(screen.getByText('Поздняя отмена · без долга и штрафа')).toBeInTheDocument();
 });

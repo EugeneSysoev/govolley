@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { MagneticButton } from '@/components/magnetic-button';
@@ -15,6 +15,7 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const bookingRequest = useRef<string | null>(null);
   const isBookedByUser = training.isBooked;
   const isFull = training.currentParticipants >= training.maxParticipants;
   const progress = Math.min(100, training.currentParticipants / training.maxParticipants * 100);
@@ -31,7 +32,14 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
   const changeBooking = async (cancel: boolean) => {
     if (!accessToken) { setError('Необходимо авторизоваться'); return; }
     setIsLoading(true); setError(null);
-    try { setTraining(await (cancel ? trainingApi.unbook(training.id, accessToken) : trainingApi.book(training.id, accessToken))); }
+    try {
+      if (cancel && !training.bookingId) throw new Error('Обновите тренировку перед отменой');
+      if (!cancel) bookingRequest.current ??= crypto.randomUUID();
+      setTraining(await (cancel
+        ? trainingApi.unbook(training.id, accessToken, training.bookingId!)
+        : trainingApi.book(training.id, accessToken, bookingRequest.current!)));
+      bookingRequest.current = null;
+    }
     catch (error) { setError(error instanceof Error ? error.message : 'Не удалось изменить запись'); }
     finally { setIsLoading(false); }
   };
@@ -99,6 +107,10 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
       </div>
 
       {error && <p role="alert" className="text-red-400 mb-4">{error}</p>}
+      <div className="text-white/60 text-sm mb-6 space-y-2">
+        <p>500 ฿ на месте. Оплата при посещении.</p>
+        <p>Отмена за 3 часа или раньше — своевременная. Поздняя разовая отмена — без долга и штрафа.</p>
+      </div>
       <div className="flex justify-center w-full">
         <div className="w-55">
           <MagneticButton>
