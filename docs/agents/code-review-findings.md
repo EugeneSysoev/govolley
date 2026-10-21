@@ -21,7 +21,8 @@
 
 ### STD-002 — P3: четыре справочника уровней дублируются и расходятся
 
-- Статус: `open`.
+- Статус: `closed` — 2026-10-21, принята #4, merge `0a2ab89`.
+- Evidence: [интеграционная приёмка #4](../history/2026-10-21/ISSUE-4-INTEGRATION.md): единый справочник, component/SSR 20/20, два timezone browser, typecheck; lint snapshot из checkpoint. Независимые Standards/Spec без открытых замечаний.
 - Задача: [#4](https://github.com/EugeneSysoev/govolley/issues/4).
 - Тип: оценочное замечание `Duplicated Code`, а не нарушение обязательного стандарта.
 - Код: `apps/frontend/app/training/training-card.tsx:7–12`, `apps/frontend/app/training/training-modal.tsx:27–32`, `apps/frontend/app/training/[id]/booking-sidebar.tsx:10`, `apps/frontend/app/profile/profile-stats.tsx:4–9`.
@@ -57,7 +58,8 @@
 
 ### SPEC-003 — P2: пустая строка локации отображается пустым полем
 
-- Статус: `open`.
+- Статус: `closed` — 2026-10-21, принята #4, merge `0a2ab89`.
+- Evidence: [интеграционная приёмка #4](../history/2026-10-21/ISSUE-4-INTEGRATION.md): общий fallback, null/empty/whitespace и непустая площадка в component/SSR 20/20 и browser двух timezone; HTTP/PostgreSQL 26/26. Независимые Standards/Spec без открытых замечаний.
 - Задача: [#4](https://github.com/EugeneSysoev/govolley/issues/4).
 - Основание: README.md:96 — «Пустая локация отображается как “Уточняется”».
 - Код: `packages/shared-types/src/training.ts` — optionalText; `apps/frontend/app/training/training-card.tsx:136`, `apps/frontend/app/training/[id]/booking-sidebar.tsx:79`, `apps/frontend/app/training/[id]/page.tsx:56`.
