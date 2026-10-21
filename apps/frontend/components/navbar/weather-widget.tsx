@@ -9,33 +9,28 @@ const WeatherWidget = memo(() => {
     temp: "--",
     icon: "Clear",
   });
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const fetchWeather = async () => {
       try {
-        const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
-        if (!API_KEY) return;
-
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=7.88&lon=98.39&units=metric&appid=${API_KEY}`,
-        );
+        const res = await fetch('/api/weather');
+        if (!res.ok) throw new Error('Weather unavailable');
         const weatherData = await res.json();
-
-        if (weatherData.main) {
-          setData({
-            temp: Math.round(weatherData.main.temp).toString(),
-            icon: weatherData.weather[0].main,
-          });
+        if (active) {
+          setData({ temp: String(weatherData.temp), icon: weatherData.icon });
+          setUnavailable(false);
         }
-      } catch (e) {
-        console.error("Weather error:", e);
+      } catch {
+        if (active) setUnavailable(true);
       }
     };
 
     fetchWeather();
     const weatherTimer = setInterval(fetchWeather, 600000);
 
-    return () => clearInterval(weatherTimer);
+    return () => { active = false; clearInterval(weatherTimer); };
   }, []);
 
   const WeatherIcon = () => {
@@ -71,9 +66,9 @@ const WeatherWidget = memo(() => {
       <span className="sm:hidden drop-shadow-xs/50">PHUKET</span>
 
       <div className="flex items-center gap-1.5 ml-1 bg-brand-lime/10 px-2.5 py-1 rounded-full border border-brand-lime/10">
-        <WeatherIcon />
+        {!unavailable && <WeatherIcon />}
         <span className="text-brand-lime font-mono tabular-nums">
-          {data.temp}°C
+          {unavailable ? 'Погода недоступна' : `${data.temp}°C`}
         </span>
       </div>
     </motion.div>
