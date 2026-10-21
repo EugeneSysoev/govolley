@@ -46,6 +46,7 @@ model User {
   // Связи
   bookings        Booking[]
   authSessions    AuthSession[]
+  notifications   Notification[]
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -83,6 +84,7 @@ model Booking {
   cancelledAt DateTime?
   cancellationTiming CancellationTiming?
   requestId   String? @db.Uuid
+  notifications Notification[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -104,4 +106,44 @@ model AuthSession {
   updatedAt  DateTime @updatedAt
 
   @@index([status])
+}
+
+enum NotificationKind {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  RETRY
+  DELIVERED
+  UNDELIVERABLE
+}
+
+model Notification {
+  id            Int @id @default(autoincrement())
+  bookingId     Int
+  booking       Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId        Int
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingId    Int
+  kind          NotificationKind
+  recipient     String?
+  trainingTitle String
+  schoolDate    String
+  startTime     String
+  endTime       String
+  text          String
+  status        NotificationStatus @default(PENDING)
+  attempts      Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  leaseUntil    DateTime?
+  leaseToken    String? @db.Uuid
+  deliveredAt   DateTime?
+  lastError     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([bookingId, kind])
+  @@index([status, nextAttemptAt, leaseUntil])
 }
