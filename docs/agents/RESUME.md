@@ -7,8 +7,10 @@
 Стартовый root HEAD `e15ac1bc1150434bd8c9e15c18723b527a88f334`, дерево чистое; origin/PR #16 совпадает, draft, base main `0959c948a7a287d06f84728799ebe5b1be68eaad`. GitHub #2/#3/#4/#7 закрыты; #5/#6/#8–#15 открыты. Тела всего графа сверены, у #5/#14 комментариев нет.
 
 - #14 принята: merge `c5ea14696eea2df437c43328697b502856da59a1`, финал ветки `9a4bfe38931f1f1a725b881d180af7e5ac563f8a`. Реальные HTTP/browser success/failure/missing-key и bundle scan 40/0 прошли; обе оси ревью без находок, STD-001 закрыта. [Приёмка](../history/2026-10-22/ISSUE-14-INTEGRATION.md). Worktree чистая и сохранена.
-- #5 начата в `.worktrees/issue-5`, `codex/mvp-issue-5`, task_base_sha `e15ac1bc1150434bd8c9e15c18723b527a88f334`. Владелец Prisma/shared booking/contracts — исполнитель #5; ресурсы/порты изолированы от #14.
-- Следующий зависимый фронт после приёмки #5: #6 и #10. Исторические сведения ниже сохраняют исходную дату и прежние бюджетные пороги.
+- #5 принята: merge `f47e88fd1b6fbb99af74e1dc010e20cac63af04f`, код `1069ce2` + ID fix `cca2c29`; обе оси без находок. HTTP/PostgreSQL 35, frontend32/backend39/e2e2/browser9, type/lint/build и 11 миграций empty/legacy прошли. [Приёмка](../history/2026-10-22/ISSUE-5-INTEGRATION.md). Worktree чистая, final `3652f72`; отчёт перенесён в root `8645829`.
+- Book требует `{trainingId, requestId:UUID}`, unbook `{trainingId, bookingId}`; rebook сохраняет новую identity и прежнюю историю. Training→User lock, внедряемый TrainingClock. Legacy CASH/BALANCE не доказывают оплату. Две миграции #5 обязательны; общий owner-only BookingResponseSchema экспортирован из shared-types.
+- #6 и #10 начали отдельные `.worktrees/issue-6` / `.worktrees/issue-10`, `codex/mvp-issue-6` / `codex/mvp-issue-10`, task_base_sha `f47e88fd1b6fbb99af74e1dc010e20cac63af04f`. #6 владеет attendance/payment/audit; #10 notification/outbox. Базы databases.issue6/issue10; порты55960/55961 и56000/56001; миграционные timestamps20261022000600 и20261022001000. Будущие изменения схемы/экспортов объединяет координатор.
+- Последняя квота при старте нового фронта —52% codex/300; запуск продолжается по разрешению владельца. Исторические сведения ниже сохраняют исходную дату и прежние бюджетные пороги.
 
 Обновлено 2026-10-21: реализация остановлена на бюджетном пороге 45% после приёмки #7/#4; после сохранения checkpoint последнее измерение — 47%. #14 сохранена незавершённой, не слита; #5 доступна после принятой #4. Новые задачи после достижения 40% не выдавались.
 
