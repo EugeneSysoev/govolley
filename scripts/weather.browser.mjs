@@ -3,7 +3,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { startBrowserRuntime } from './browser-runtime.mjs';
 
-const fixture = fileURLToPath(new URL('./weather-provider-fixture.cjs', import.meta.url));
+// NODE_OPTIONS treats backslashes as escapes inside quoted values on Windows.
+const fixture = fileURLToPath(new URL('./weather-provider-fixture.cjs', import.meta.url)).replaceAll('\\', '/');
 const results = [];
 for (const mode of ['success', 'failure', 'missing-key']) {
   process.env.WEATHER_TEST_MODE = mode;
