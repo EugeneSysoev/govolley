@@ -454,6 +454,29 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
       legacy.id,
     );
   });
+  it('rejects IDs outside PostgreSQL Int range before querying bookings or training', async () => {
+    const learner = await user();
+    const t = await event();
+    await request(server).get('/api/training/2147483648').expect(400);
+    for (const body of [
+      { trainingId: 2147483648, requestId: randomUUID() },
+      { trainingId: t.id, requestId: 'not-a-uuid' },
+    ])
+      await request(server)
+        .post('/api/training/book')
+        .auth(token(learner.id), { type: 'bearer' })
+        .send(body)
+        .expect(400);
+    for (const body of [
+      { trainingId: 2147483648, bookingId: 1 },
+      { trainingId: t.id, bookingId: 2147483648 },
+    ])
+      await request(server)
+        .post('/api/training/unbook')
+        .auth(token(learner.id), { type: 'bearer' })
+        .send(body)
+        .expect(400);
+  });
   it('creates a public group with required school data and rejects missing or unset values', async () => {
     const manager = await user('COACH');
     const body = {

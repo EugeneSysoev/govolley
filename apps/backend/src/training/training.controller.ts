@@ -21,18 +21,14 @@ import { validate } from '../common/utils/validate.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard.js';
 import { TrainingManagerGuard } from '../auth/guards/training-manager.guard.js';
-const idSchema = z.coerce
-  .number()
-  .int()
-  .positive()
-  .max(Number.MAX_SAFE_INTEGER);
+const idSchema = z.coerce.number().int().positive().max(2147483647);
 const bookingSchema = z.strictObject({
-  trainingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  trainingId: z.number().int().positive().max(2147483647),
   requestId: z.uuid(),
 });
 const cancellationSchema = z.strictObject({
-  trainingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
-  bookingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  trainingId: z.number().int().positive().max(2147483647),
+  bookingId: z.number().int().positive().max(2147483647),
 });
 function userId(req: Request): number {
   if (!req.user) throw new UnauthorizedException();
