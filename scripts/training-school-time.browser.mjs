@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 
 // Real frontend, Nest HTTP and dedicated PostgreSQL; only Telegram's identity
@@ -45,6 +46,7 @@ const trainingIds = [];
 const userIds = [];
 const sessionIds = [];
 const results = [];
+const runId = randomUUID();
 let browser;
 try {
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -58,7 +60,7 @@ try {
     const coach = await db.user.create({ data: { telegramId: String(identity.id), firstName: identity.first_name, role: 'COACH', skillLevel: 'BEGINNER' } });
     userIds.push(coach.id);
     const event = await db.training.create({ data: {
-      title: `School day ${index}`, date: new Date('2026-10-31T18:00:00Z'), startTime: '07:00', endTime: '09:00',
+      title: `School day ${index} ${runId}`, date: new Date('2026-10-31T18:00:00Z'), startTime: '07:00', endTime: '09:00',
       targetLevel: 'BEGINNER', maxParticipants: 10, price: 500, coachName: 'Coach', description: 'Работа над приёмом', location: index ? '   ' : null,
     } });
     trainingIds.push(event.id);
@@ -99,9 +101,11 @@ try {
     // is complete; restore real time before obtaining a short-lived session.
     await page.clock.setSystemTime(new Date());
     await page.goto(`${base}/auth/signin`);
-    const initialized = page.waitForResponse((response) => response.url() === `${base}/api/bot-auth/init-session` && response.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Войти через Telegram', exact: true }).click();
-    const { sessionId } = await (await initialized).json();
+    const [initialized] = await Promise.all([
+      page.waitForResponse((response) => response.url() === `${base}/api/bot-auth/init-session` && response.request().method() === 'POST'),
+      page.getByRole('button', { name: 'Войти через Telegram', exact: true }).click(),
+    ]);
+    const { sessionId } = await initialized.json();
     sessionIds.push(sessionId);
     await sessions.confirm(sessionId, identity);
     await page.waitForURL('**/profile');
@@ -113,12 +117,14 @@ try {
     await page.getByRole('button', { name: '+ Создать тренировку', exact: true }).click();
     await expect(page.getByLabel('Дата по Пхукету', { exact: true })).toHaveValue('2026-11-01');
     await page.getByLabel('Дата по Пхукету', { exact: true }).fill('2026-11-02');
-    await page.getByLabel('Название тренировки', { exact: true }).fill(`Created in ${timezoneId}`);
+    await page.getByLabel('Название тренировки', { exact: true }).fill(`Created in ${timezoneId} ${runId}`);
     await page.getByLabel('Тренер', { exact: true }).fill('School coach');
     await page.getByLabel('Описание (необязательно)', { exact: true }).fill('Тренировка группы');
-    const createdResponse = page.waitForResponse((response) => response.url() === `${base}/api/training` && response.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Создать тренировку', exact: true }).click();
-    const created = await (await createdResponse).json();
+    const [createdResponse] = await Promise.all([
+      page.waitForResponse((response) => response.url() === `${base}/api/training` && response.request().method() === 'POST'),
+      page.getByRole('button', { name: 'Создать тренировку', exact: true }).click(),
+    ]);
+    const created = await createdResponse.json();
     assert.equal(created.date, '2026-11-01T17:00:00.000Z');
     assert.equal(created.price, 500);
     assert.equal(created.startTime, '07:00');
@@ -131,9 +137,11 @@ try {
     await expect(page.getByLabel('Дата по Пхукету', { exact: true })).toHaveValue('2026-11-02');
     await expect(page.getByLabel('Начало', { exact: true })).toHaveValue('07:00');
     await page.getByLabel('Конец', { exact: true }).fill('10:00');
-    const updatedResponse = page.waitForResponse((response) => response.url() === `${base}/api/training/${created.id}` && response.request().method() === 'PATCH');
-    await page.getByRole('button', { name: 'Обновить данные', exact: true }).click();
-    const updated = await (await updatedResponse).json();
+    const [updatedResponse] = await Promise.all([
+      page.waitForResponse((response) => response.url() === `${base}/api/training/${created.id}` && response.request().method() === 'PATCH'),
+      page.getByRole('button', { name: 'Обновить данные', exact: true }).click(),
+    ]);
+    const updated = await updatedResponse.json();
     assert.equal(updated.date, '2026-11-01T17:00:00.000Z');
     assert.equal(updated.endTime, '10:00');
     await page.getByText('07:00 — 10:00', { exact: true }).waitFor();
