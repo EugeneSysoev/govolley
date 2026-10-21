@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Calendar, Clock, MapPin } from "lucide-react";
 import { Booking } from "./profile-types";
+import { formatSchoolDate, locationLabel, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 interface ProfileBookingsProps {
   bookings: Booking[];
@@ -15,7 +16,7 @@ const formatDate = (dateString: string): string => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Дата неизвестна";
-    return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+    return formatSchoolDate(date, { day: "numeric", month: "long" });
   } catch {
     return "Дата неизвестна";
   }
@@ -63,6 +64,7 @@ export function ProfileBookings({
         </span>
       </div>
 
+      <p className="text-white/50 text-xs mb-4">{SCHOOL_TIME_LABEL}</p>
       <div className="grid grid-cols-1 gap-4">
         {displayedBookings.map((booking) => {
           const { training, status } = booking;
@@ -86,13 +88,13 @@ export function ProfileBookings({
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    <span>{training?.startTime || "—"}</span>
+                    <span>{training.startTime} — {training.endTime}</span>
                   </div>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <div className="flex items-center gap-1 truncate">
                     <MapPin className="w-3 h-3 shrink-0" />
                     <span className="truncate max-w-37.5 sm:max-w-none">
-                      {training?.location || "—"}
+                      {locationLabel(training?.location)}
                     </span>
                   </div>
                 </div>

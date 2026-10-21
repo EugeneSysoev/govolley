@@ -10,6 +10,8 @@ import { TrainingCard } from "./training-card";
 import { TrainingModal } from "./training-modal";
 import { trainingApi } from "./api";
 import { Training } from "./types";
+import { schoolDateKey } from '@govolley/shared-types';
+import { formatSchoolDate, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 export default function TrainingPage() {
   const { data: session, status } = useSession();
@@ -56,7 +58,7 @@ export default function TrainingPage() {
     if (!Array.isArray(trainings)) return [];
     return trainings.filter((t) => {
       if (!t.date) return false;
-      return new Date(t.date).toDateString() === selectedDate.toDateString();
+      return schoolDateKey(t.date) === schoolDateKey(selectedDate);
     });
   }, [selectedDate, trainings]);
 
@@ -77,7 +79,7 @@ export default function TrainingPage() {
   };
 
   // Форматирование выбранной даты для отображения
-  const formattedDate = selectedDate.toLocaleDateString("ru-RU", {
+  const formattedDate = formatSchoolDate(selectedDate, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -134,6 +136,7 @@ export default function TrainingPage() {
               <span className="text-white font-light text-lg tracking-tight">
                 {formattedDate}
               </span>
+              <span className="text-white/50 text-xs">{SCHOOL_TIME_LABEL}</span>
             </div>
 
             <button

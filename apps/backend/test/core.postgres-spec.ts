@@ -39,7 +39,10 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
     startTime: '07:00',
     endTime: '09:00',
     maxParticipants: 1,
-    targetLevel: 'NOT_SET' as const,
+    targetLevel: 'BEGINNER' as const,
+    location: 'Karon Beach',
+    coachName: 'Coach',
+    price: 500 as const,
   };
 
   beforeAll(async () => {
@@ -109,6 +112,74 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
   function token(id: number) {
     return jwt.sign({ sub: id, role: 'ADMIN' });
   }
+  it('creates a public group with required school data and rejects missing or unset values', async () => {
+    const manager = await user('COACH');
+    const body = {
+      ...dto,
+      date: '2026-11-01T00:00:00+07:00',
+      targetLevel: 'BEGINNER',
+      location: ' Karon Beach ',
+      coachName: ' Coach ',
+      price: 500,
+      description: 'Работа над приёмом',
+    };
+    for (const field of [
+      'title',
+      'date',
+      'startTime',
+      'endTime',
+      'targetLevel',
+      'maxParticipants',
+      'location',
+      'coachName',
+      'price',
+    ]) {
+      const incomplete: Record<string, unknown> = { ...body };
+      delete incomplete[field];
+      await request(server)
+        .post('/api/training')
+        .auth(token(manager.id), { type: 'bearer' })
+        .send(incomplete)
+        .expect(400);
+    }
+    for (const invalid of [
+      { targetLevel: 'NOT_SET' },
+      { location: '   ' },
+      { coachName: null },
+      { price: 0 },
+    ]) {
+      await request(server)
+        .post('/api/training')
+        .auth(token(manager.id), { type: 'bearer' })
+        .send({ ...body, ...invalid })
+        .expect(400);
+    }
+    const created = await request(server)
+      .post('/api/training')
+      .auth(token(manager.id), { type: 'bearer' })
+      .send(body)
+      .expect(201);
+    const saved = TrainingResponseSchema.parse(created.body);
+    trainings.push(saved.id);
+    const publicRead = await request(server)
+      .get(`/api/training/${saved.id}`)
+      .expect(200);
+    expect(TrainingResponseSchema.parse(publicRead.body)).toMatchObject({
+      title: dto.title,
+      location: 'Karon Beach',
+      coachName: 'Coach',
+      price: 500,
+      description: body.description,
+      date: '2026-10-31T17:00:00.000Z',
+      startTime: '07:00',
+      endTime: '09:00',
+      targetLevel: 'BEGINNER',
+    });
+    const list = await request(server).get('/api/training').expect(200);
+    expect(TrainingResponseSchema.array().parse(list.body)).toContainEqual(
+      saved,
+    );
+  });
   it('accepts real multipart images after the Multer upgrade and enforces type/count/size limits', async () => {
     const u = await user();
     const png = Buffer.from(
@@ -303,7 +374,7 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
       });
     },
   );
-  it('keeps omitted PATCH fields and explicitly clears nullable values over HTTP', async () => {
+  it('keeps omitted PATCH fields, allows clearing description, and rejects clearing required data', async () => {
     const t = await event();
     const manager = await user('COACH');
     const endpoint = `/api/training/${t.id}`;
@@ -328,17 +399,76 @@ describe('PostgreSQL concurrency and protected HTTP operations', () => {
       description: 'Saved',
       price: 500,
     });
+    for (const body of [
+      { location: null },
+      { location: '   ' },
+      { coachName: null },
+      { coachName: '' },
+      { price: null },
+      { price: 400 },
+      { targetLevel: 'NOT_SET' },
+    ]) {
+      await request(server)
+        .patch(endpoint)
+        .auth(token(manager.id), { type: 'bearer' })
+        .send(body)
+        .expect(400);
+    }
     const cleared = await request(server)
       .patch(endpoint)
       .auth(token(manager.id), { type: 'bearer' })
-      .send({ location: null, coachName: null, description: null, price: null })
+      .send({ description: null })
       .expect(200);
     expect(TrainingResponseSchema.parse(cleared.body)).toMatchObject({
-      location: null,
-      coachName: null,
+      location: 'Beach',
+      coachName: 'Coach',
       description: null,
-      price: null,
+      price: 500,
     });
+  });
+  it('reads legacy incomplete groups without inventing price, level, location or coach', async () => {
+    for (const location of [null, '', '   ']) {
+      const legacy = await db.training.create({
+        data: {
+          title: 'Legacy',
+          date: new Date('2026-10-31T18:00:00Z'),
+          startTime: '07:00',
+          endTime: '09:00',
+          maxParticipants: 10,
+          location,
+        },
+      });
+      trainings.push(legacy.id);
+      const result = await request(server)
+        .get(`/api/training/${legacy.id}`)
+        .expect(200);
+      expect(TrainingResponseSchema.parse(result.body)).toMatchObject({
+        location,
+        coachName: null,
+        price: null,
+        targetLevel: 'NOT_SET',
+        date: '2026-10-31T18:00:00.000Z',
+      });
+    }
+  });
+  it('accepts calendar dates and offset timestamps as the same Bangkok day on create and update', async () => {
+    const manager = await user('COACH');
+    const created = await request(server)
+      .post('/api/training')
+      .auth(token(manager.id), { type: 'bearer' })
+      .send({ ...dto, date: '2026-11-01' })
+      .expect(201);
+    const saved = TrainingResponseSchema.parse(created.body);
+    trainings.push(saved.id);
+    expect(saved.date).toBe('2026-10-31T17:00:00.000Z');
+    const updated = await request(server)
+      .patch(`/api/training/${saved.id}`)
+      .auth(token(manager.id), { type: 'bearer' })
+      .send({ date: '2026-10-31T18:00:00Z' })
+      .expect(200);
+    expect(TrainingResponseSchema.parse(updated.body).date).toBe(
+      '2026-10-31T17:00:00.000Z',
+    );
   });
   it.each(['post', 'patch', 'delete'] as const)(
     'enforces 401/403/allowed role on %s',

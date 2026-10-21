@@ -10,7 +10,10 @@ const valid = {
   startTime: '07:00',
   endTime: '09:00',
   maxParticipants: 10,
-  targetLevel: 'NOT_SET',
+  targetLevel: 'BEGINNER',
+  location: 'Beach',
+  coachName: 'Coach',
+  price: 500,
 };
 
 describe('HTTP payload contracts', () => {
@@ -28,10 +31,10 @@ describe('HTTP payload contracts', () => {
       CreateTrainingSchema.safeParse({ ...valid, ...fields }).success,
     ).toBe(false);
   });
-  it('accepts a partial update and nullable fields', () => {
-    expect(
-      UpdateTrainingSchema.safeParse({ location: null, price: null }).success,
-    ).toBe(true);
+  it('accepts a partial update and clearing an optional description', () => {
+    expect(UpdateTrainingSchema.safeParse({ description: null }).success).toBe(
+      true,
+    );
   });
   it.each([
     { maxParticipants: -1 },

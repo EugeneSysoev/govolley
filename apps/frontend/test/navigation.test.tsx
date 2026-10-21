@@ -21,7 +21,7 @@ jest.mock('@/components/footer', () => ({ __esModule: true, default: () => null 
 jest.mock('@/app/training/api', () => ({ trainingApi: { get: jest.fn(), book: jest.fn(), unbook: jest.fn() } }));
 const training: Training = { id: 7, title: 'Full group', date: '2026-11-01T00:00:00.000Z', startTime: '07:00', endTime: '09:00',
   description: null, targetLevel: 'BEGINNER', maxParticipants: 1, currentParticipants: 1, isBooked: true,
-  price: null, location: null, coachName: null, isActive: true, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' };
+  price: 500, location: null, coachName: null, isActive: true, createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' };
 
 beforeEach(() => { jest.clearAllMocks(); sessionStorage.clear(); mockPath = '/'; mockLevel = 'BEGINNER'; });
 it('makes another route visible when leaving an unfinished home intro', async () => {

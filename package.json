@@ -15,7 +15,8 @@
     "test:e2e": "bun run --cwd apps/backend test:e2e",
     "test:integration": "bun run --cwd apps/backend test:integration",
     "test:db:prepare": "node scripts/test-database.mjs",
-    "test:browser": "node scripts/browser-smoke.mjs"
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "test:browser:school-time": "node scripts/training-school-time.browser.mjs"
   },
   "devDependencies": {
     "turbo": "^2.11.9",

@@ -5,9 +5,9 @@ import { motion } from 'framer-motion';
 import { MagneticButton } from '@/components/magnetic-button';
 import type { Training } from '../types';
 import { trainingApi } from '../api';
+import { formatSchoolDate, LEVEL_LABELS, locationLabel, priceLabel, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 const CLAMP_LABEL = 'text-[clamp(0.65rem,1.5vw,0.7rem)]';
 const CLAMP_VALUE = 'text-[clamp(0.85rem,2vw,0.95rem)]';
-const LEVEL_LABELS: Record<string,string> = { NOT_SET: 'Не указан', BEGINNER: 'Новичок', INTERMEDIATE: 'Средний', ADVANCED: 'Продвинутый' };
 export function BookingSidebar({ training: initialTraining }: { training: Training }) {
   const { data: session } = useSession();
   const accessToken = session?.accessToken;
@@ -18,7 +18,7 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
   const isBookedByUser = training.isBooked;
   const isFull = training.currentParticipants >= training.maxParticipants;
   const progress = Math.min(100, training.currentParticipants / training.maxParticipants * 100);
-  const formattedDate = new Date(training.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const formattedDate = formatSchoolDate(training.date, { day: '2-digit', month: '2-digit', year: '2-digit' });
   const levelLabel = LEVEL_LABELS[training.targetLevel];
   useEffect(() => {
     const controller = new AbortController();
@@ -68,6 +68,7 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
       animate={{ opacity: isFetching ? 0.7 : 1, x: 0 }}
       className="sticky top-32 bg-white/2 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-8 md:p-10 flex flex-col shadow-2xl overflow-hidden"
     >
+      <p className="text-white/50 text-xs mb-4">{SCHOOL_TIME_LABEL}</p>
       <div className="grid grid-cols-2 gap-x-8 gap-y-6 mb-8">
         <InfoBlock label="Дата" value={formattedDate} />
         <InfoBlock
@@ -76,13 +77,14 @@ export function BookingSidebar({ training: initialTraining }: { training: Traini
           isAccent
         />
         <InfoBlock label="Уровень" value={levelLabel} />
-        <InfoBlock label="Локация" value={training.location ?? "Уточняется"} />
+        <InfoBlock label="Локация" value={locationLabel(training.location)} />
         <InfoBlock
           label="Места"
           value={`${training.currentParticipants} / ${training.maxParticipants}`}
           isAccent={!isFull}
         />
         <InfoBlock label="Тренер" value={training.coachName || "—"} />
+        <InfoBlock label="Разовая оплата на месте" value={priceLabel(training.price)} />
       </div>
 
       <div className="mb-10 px-1">

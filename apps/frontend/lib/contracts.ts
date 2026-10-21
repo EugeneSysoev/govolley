@@ -10,5 +10,5 @@ export type Profile = z.infer<typeof profileSchema>;
 export const loginSchema = profileSchema.extend({ accessToken: z.string().min(1) });
 export const bookingsSchema = z.array(z.object({
   id: z.number().int(), status: z.enum(['CONFIRMED','CANCELLED']), createdAt: z.iso.datetime(),
-  training: z.object({ id: z.number().int(), title: z.string(), date: z.iso.datetime(), startTime: z.string(), location: z.string().nullable(), isActive: z.boolean() }),
+  training: z.object({ id: z.number().int(), title: z.string(), date: z.iso.datetime(), startTime: z.string(), endTime: z.string(), location: z.string().nullable(), isActive: z.boolean() }),
 }));

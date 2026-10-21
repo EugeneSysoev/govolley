@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Training, CreateTrainingDto } from "./types";
-import { CreateTrainingSchema } from "@govolley/shared-types";
+import { CreateTrainingSchema, schoolDateKey, SkillLevel } from "@govolley/shared-types";
+import { LEVEL_LABELS, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 import { useSession } from "next-auth/react";
 import { trainingApi } from "./api";
 
@@ -23,15 +24,7 @@ interface FormFieldProps {
   required?: boolean;
 }
 
-// --- Русские названия уровней (аналогично skillLevelLabels) ---
-const LEVEL_LABELS: Record<string, string> = {
-  NOT_SET: "Не указан",
-  BEGINNER: "Начинающий",
-  INTERMEDIATE: "Средний",
-  ADVANCED: "Продвинутый",
-};
-
-const GROUP_LEVELS = Object.keys(LEVEL_LABELS);
+const GROUP_LEVELS = [SkillLevel.BEGINNER, SkillLevel.INTERMEDIATE, SkillLevel.ADVANCED];
 const LOCATIONS = ["Karon Beach", "Kata-Noi Beach", "Nai-Harn beach"];
 
 const FIELD_CLASSES =
@@ -49,9 +42,10 @@ const FormInput = ({
   onChange,
 }: FormFieldProps & { type?: string }) => (
   <div className="space-y-1">
-    <label className={LABEL_CLASSES}>{label}</label>
+    <label htmlFor={`training-${field}`} className={LABEL_CLASSES}>{label}</label>
     <div className="relative group">
       <input
+        id={`training-${field}`}
         type={type}
         required={required}
         className={`${FIELD_CLASSES} ${
@@ -80,17 +74,19 @@ const FormSelect = ({
   onChange,
 }: FormFieldProps & { options: string[] }) => (
   <div className="space-y-1 relative">
-    <label className={LABEL_CLASSES}>{label}</label>
+    <label htmlFor={`training-${field}`} className={LABEL_CLASSES}>{label}</label>
     <div className="relative">
       <select
+        id={`training-${field}`}
         required={required}
         className={FIELD_CLASSES}
         value={value ?? ""}
         onChange={(e) => onChange(field, e.target.value)}
       >
+        <option value="" disabled className="bg-[#161618] text-white">Выберите значение</option>
         {options.map((opt) => (
           <option key={opt} value={opt} className="bg-[#161618] text-white">
-            {LEVEL_LABELS[opt] || opt}
+            {opt in LEVEL_LABELS ? LEVEL_LABELS[opt as SkillLevel] : opt}
           </option>
         ))}
       </select>
@@ -109,20 +105,23 @@ export function TrainingModal({
   selectedDate,
 }: TrainingModalProps) {
   const { data: session } = useSession();
-  const [formData, setFormData] = useState<Partial<CreateTrainingDto>>({});
+  const [formData, setFormData] = useState<Partial<Training>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      setError(null);
       setFormData(
-        initialData || {
+        initialData ? { ...initialData, date: schoolDateKey(initialData.date) } : {
           title: "",
           location: LOCATIONS[0],
-          coachName: "Евгений Сысоев",
-          targetLevel: "NOT_SET",
+          coachName: "",
+          targetLevel: "BEGINNER",
+          price: 500,
           startTime: "07:00",
           endTime: "09:00",
           maxParticipants: 10,
-          date: selectedDate.toISOString(),
+          date: schoolDateKey(selectedDate),
         },
       );
     }
@@ -137,8 +136,8 @@ export function TrainingModal({
     try {
       const data = CreateTrainingSchema.parse({
         title: formData.title, description: formData.description,
-        location: formData.location || null, coachName: formData.coachName || null,
-        price: formData.price ?? null, targetLevel: formData.targetLevel,
+        location: formData.location, coachName: formData.coachName,
+        price: formData.price, targetLevel: formData.targetLevel,
         date: formData.date, startTime: formData.startTime, endTime: formData.endTime,
         maxParticipants: formData.maxParticipants,
       });
@@ -151,7 +150,7 @@ export function TrainingModal({
       onClose();
     } catch (error) {
       console.error("Save error:", error);
-      alert("Ошибка при сохранении.");
+      setError(error instanceof Error ? error.message : 'Ошибка при сохранении');
     }
   };
 
@@ -180,6 +179,8 @@ export function TrainingModal({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-2">
+              <p className="text-white/60 text-xs">{SCHOOL_TIME_LABEL}</p>
+              <FormInput label="Дата по Пхукету" field="date" type="date" required value={formData.date || ''} onChange={handleChange} />
               <FormInput
                 label="Название тренировки"
                 field="title"
@@ -194,13 +195,14 @@ export function TrainingModal({
                   field="targetLevel"
                   options={GROUP_LEVELS}
                   required
-                  value={formData.targetLevel || "NOT_SET"}
+                  value={formData.targetLevel === 'NOT_SET' ? '' : formData.targetLevel || ''}
                   onChange={handleChange}
                 />
                 <FormInput
                   label="Макс. мест"
                   field="maxParticipants"
                   type="number"
+                  required
                   value={formData.maxParticipants || ""}
                   onChange={handleChange}
                 />
@@ -237,9 +239,16 @@ export function TrainingModal({
               <FormInput
                 label="Тренер"
                 field="coachName"
+                required
                 value={formData.coachName || ""}
                 onChange={handleChange}
               />
+              <FormInput label="Разовая оплата на месте — 500 ฿" field="price" type="number" required value={formData.price ?? ''} onChange={handleChange} />
+              <div className="space-y-1">
+                <label htmlFor="training-description" className={LABEL_CLASSES}>Описание (необязательно)</label>
+                <textarea id="training-description" className={FIELD_CLASSES} value={formData.description ?? ''} onChange={(event) => handleChange('description', event.target.value)} />
+              </div>
+              {error && <p role="alert" className="text-red-400 text-sm">Не удалось сохранить: {error}</p>}
 
               <div className="pt-4 flex gap-4">
                 <button

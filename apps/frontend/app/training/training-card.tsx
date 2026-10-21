@@ -3,13 +3,7 @@
 import { motion } from "framer-motion";
 import { Training } from "./types";
 import { BookingButton } from "./router-button";
-
-const LEVEL_LABELS: Record<string, string> = {
-  NOT_SET: "Не указан",
-  BEGINNER: "Начинающий",
-  INTERMEDIATE: "Средний",
-  ADVANCED: "Продвинутый",
-};
+import { formatSchoolDate, LEVEL_LABELS, locationLabel, priceLabel, SCHOOL_TIME_LABEL } from '@/lib/training-display';
 
 interface TrainingCardProps {
   training: Training;
@@ -31,7 +25,7 @@ export function TrainingCard({
   const isFull = t.currentParticipants >= t.maxParticipants;
   const progress = (t.currentParticipants / t.maxParticipants) * 100;
 
-  const formattedDate = new Date(t.date).toLocaleDateString("ru-RU", {
+  const formattedDate = formatSchoolDate(t.date, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
@@ -64,7 +58,8 @@ export function TrainingCard({
   );
 
   return (
-    <motion.div
+    <motion.article
+      aria-label={t.title}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -75,6 +70,7 @@ export function TrainingCard({
       {canManage && (
         <div className="absolute top-8 right-8 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
           <button
+            aria-label="Редактировать тренировку"
             onClick={(e) => {
               e.preventDefault();
               onEdit();
@@ -95,6 +91,7 @@ export function TrainingCard({
             </svg>
           </button>
           <button
+            aria-label="Удалить тренировку"
             onClick={(e) => {
               e.preventDefault();
               onDelete();
@@ -125,6 +122,7 @@ export function TrainingCard({
       </div>
 
       {/* Сетка информации */}
+      <p className="text-white/50 text-xs mb-4">{SCHOOL_TIME_LABEL}</p>
       <div className="grid grid-cols-2 gap-x-8 gap-y-5 mb-5">
         <InfoBlock label="Дата" value={formattedDate} />
         <InfoBlock
@@ -133,13 +131,14 @@ export function TrainingCard({
           isAccent
         />
         <InfoBlock label="Уровень" value={levelLabel} />
-        <InfoBlock label="Локация" value={t.location ?? "Уточняется"} />
+        <InfoBlock label="Локация" value={locationLabel(t.location)} />
         <InfoBlock
           label="Места"
           value={`${t.currentParticipants} / ${t.maxParticipants}`}
           isAccent={!isFull}
         />
         <InfoBlock label="Тренер" value={t.coachName || "—"} />
+        <InfoBlock label="Разовая оплата на месте" value={priceLabel(t.price)} />
       </div>
 
       {/* Прогресс заполнения */}
@@ -155,6 +154,6 @@ export function TrainingCard({
       </div>
 
       <BookingButton trainingId={t.id} isFull={isFull} />
-    </motion.div>
+    </motion.article>
   );
 }

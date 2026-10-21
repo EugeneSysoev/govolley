@@ -23,9 +23,10 @@ it.each([
   expect(trainingSchema.safeParse({ ...response, ...fields }).success).toBe(false);
 });
 
-it('distinguishes omitted PATCH fields from explicit nullable clearing', () => {
+it('distinguishes omitted PATCH fields, clearable descriptions and required group data', () => {
   expect(UpdateTrainingSchema.parse({ title: 'Updated' })).toEqual({ title: 'Updated' });
-  expect(UpdateTrainingSchema.parse({ location: null, price: null })).toEqual({ location: null, price: null });
+  expect(UpdateTrainingSchema.parse({ description: null })).toEqual({ description: null });
+  expect(UpdateTrainingSchema.safeParse({ location: null, price: null }).success).toBe(false);
 });
 
 it('reads saved training independently of creation limits', () => {

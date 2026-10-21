@@ -1,18 +1,19 @@
 import { z } from 'zod';
 import { SkillLevel } from './enums.js';
+import { schoolDateIso } from './school-time.js';
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
-const optionalText = z.string().trim().max(200).nullable().optional();
+const requiredText = z.string().trim().min(1).max(200);
 const fields = z.strictObject({
   title: z.string().trim().min(1).max(200),
   description: z.string().max(10000).nullable().optional(),
-  date: z.iso.datetime({ offset: true }),
+  date: z.union([z.iso.date(), z.iso.datetime({ offset: true })]).transform(schoolDateIso),
   startTime: time,
   endTime: time,
-  targetLevel: z.enum(SkillLevel),
+  targetLevel: z.enum([SkillLevel.BEGINNER, SkillLevel.INTERMEDIATE, SkillLevel.ADVANCED]),
   maxParticipants: z.number().int().min(1).max(100),
-  price: z.number().finite().nonnegative().nullable().optional(),
-  coachName: optionalText,
-  location: optionalText,
+  price: z.literal(500),
+  coachName: requiredText,
+  location: requiredText,
 });
 export const CreateTrainingSchema = fields.refine(
   (value) => value.endTime > value.startTime,
